@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+Packages/
+xcuserdata/
+DerivedData/
+.swiftpm/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+Pods/
+Example/Package.swift
+Example/SezzleCheckoutExample/Secrets.swift

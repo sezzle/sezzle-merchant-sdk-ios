@@ -1,0 +1,343 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2B1C3A9AC892CE99475693A6 /* ResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2139BE8C905F22656A55A7 /* ResultViewController.swift */; };
+		4F4E9202FBC35607B3C6C152 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E351981616068F58A5BAEFB /* SceneDelegate.swift */; };
+		663B13E84C0C4AFB3505A1D3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303C7D1D97720C5008659BD /* AppDelegate.swift */; };
+		E39AE8F321C97B0B3C20578F /* SezzleMerchantSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C939710E3414499FF7DA5614 /* SezzleMerchantSDK */; };
+		F514F4F8341CD6A9CC67E2A0 /* ProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		4E351981616068F58A5BAEFB /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		5303C7D1D97720C5008659BD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		5E483E48C1EAA9568B399F04 /* sezzle-merchant-sdk-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sezzle-merchant-sdk-ios"; path = ..; sourceTree = SOURCE_ROOT; };
+		966B1375BF053959559B2976 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9D2139BE8C905F22656A55A7 /* ResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultViewController.swift; sourceTree = "<group>"; };
+		A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SezzleCheckoutExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductViewController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		07F60C4733DAD5A04C4F69BF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E39AE8F321C97B0B3C20578F /* SezzleMerchantSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3DBE142EA2A3071BB5BF94E4 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */,
+				9D2139BE8C905F22656A55A7 /* ResultViewController.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		51636B83957C8B914C886AC3 = {
+			isa = PBXGroup;
+			children = (
+				E56F99AC1853FFDEE6517CC2 /* Packages */,
+				EF2D0F070DB549D815CC7F86 /* SezzleCheckoutExample */,
+				A3FDB516D2FF02384269FDE3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A3FDB516D2FF02384269FDE3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E56F99AC1853FFDEE6517CC2 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				5E483E48C1EAA9568B399F04 /* sezzle-merchant-sdk-ios */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		EF2D0F070DB549D815CC7F86 /* SezzleCheckoutExample */ = {
+			isa = PBXGroup;
+			children = (
+				5303C7D1D97720C5008659BD /* AppDelegate.swift */,
+				966B1375BF053959559B2976 /* Info.plist */,
+				4E351981616068F58A5BAEFB /* SceneDelegate.swift */,
+				3DBE142EA2A3071BB5BF94E4 /* Screens */,
+			);
+			path = SezzleCheckoutExample;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AF1A5AD4594B19FB5B9C980A /* SezzleCheckoutExample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFAC8667C58C53287F121B29 /* Build configuration list for PBXNativeTarget "SezzleCheckoutExample" */;
+			buildPhases = (
+				EE4D24722043AE743F1F364F /* Sources */,
+				07F60C4733DAD5A04C4F69BF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SezzleCheckoutExample;
+			packageProductDependencies = (
+				C939710E3414499FF7DA5614 /* SezzleMerchantSDK */,
+			);
+			productName = SezzleCheckoutExample;
+			productReference = A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BD8DF679CBFA7FD05138E0C9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 298018A978131A6B14EA765A /* Build configuration list for PBXProject "SezzleCheckoutExample" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 51636B83957C8B914C886AC3;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				78D3CCCD9B8D706B29BFC28C /* XCLocalSwiftPackageReference "..//" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A3FDB516D2FF02384269FDE3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AF1A5AD4594B19FB5B9C980A /* SezzleCheckoutExample */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EE4D24722043AE743F1F364F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				663B13E84C0C4AFB3505A1D3 /* AppDelegate.swift in Sources */,
+				F514F4F8341CD6A9CC67E2A0 /* ProductViewController.swift in Sources */,
+				2B1C3A9AC892CE99475693A6 /* ResultViewController.swift in Sources */,
+				4F4E9202FBC35607B3C6C152 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0A931DDBB65E9C3F41399B11 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		2F161F845734B41AEA65A481 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		7B3B0363E9DCD9339D100B8B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = SezzleCheckoutExample/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sezzle.example.SezzleCheckoutExample;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		951D872D1187BD04E73A5F8B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = SezzleCheckoutExample/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sezzle.example.SezzleCheckoutExample;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		298018A978131A6B14EA765A /* Build configuration list for PBXProject "SezzleCheckoutExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2F161F845734B41AEA65A481 /* Debug */,
+				0A931DDBB65E9C3F41399B11 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AFAC8667C58C53287F121B29 /* Build configuration list for PBXNativeTarget "SezzleCheckoutExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B3B0363E9DCD9339D100B8B /* Debug */,
+				951D872D1187BD04E73A5F8B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		78D3CCCD9B8D706B29BFC28C /* XCLocalSwiftPackageReference "..//" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "..//";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C939710E3414499FF7DA5614 /* SezzleMerchantSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SezzleMerchantSDK;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = BD8DF679CBFA7FD05138E0C9 /* Project object */;
+}
