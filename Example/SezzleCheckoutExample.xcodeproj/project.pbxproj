@@ -10,15 +10,21 @@
 		2B1C3A9AC892CE99475693A6 /* ResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2139BE8C905F22656A55A7 /* ResultViewController.swift */; };
 		4F4E9202FBC35607B3C6C152 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E351981616068F58A5BAEFB /* SceneDelegate.swift */; };
 		663B13E84C0C4AFB3505A1D3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303C7D1D97720C5008659BD /* AppDelegate.swift */; };
+		78829105EC10CCF687918063 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 341D197E5AAEF48B56EAA58E /* README.md */; };
 		E39AE8F321C97B0B3C20578F /* SezzleMerchantSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C939710E3414499FF7DA5614 /* SezzleMerchantSDK */; };
+		EC450FC4D11849CE5BE7E851 /* Secrets.swift.template in Resources */ = {isa = PBXBuildFile; fileRef = 4A0642C8982B78496E63D006 /* Secrets.swift.template */; };
 		F514F4F8341CD6A9CC67E2A0 /* ProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */; };
+		FE6EADF69812AE0A1593C211 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC4A8ECEE84EF1495BAC750 /* Secrets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		341D197E5AAEF48B56EAA58E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4A0642C8982B78496E63D006 /* Secrets.swift.template */ = {isa = PBXFileReference; path = Secrets.swift.template; sourceTree = "<group>"; };
 		4E351981616068F58A5BAEFB /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		5303C7D1D97720C5008659BD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5E483E48C1EAA9568B399F04 /* sezzle-merchant-sdk-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sezzle-merchant-sdk-ios"; path = ..; sourceTree = SOURCE_ROOT; };
 		966B1375BF053959559B2976 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9AC4A8ECEE84EF1495BAC750 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		9D2139BE8C905F22656A55A7 /* ResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultViewController.swift; sourceTree = "<group>"; };
 		A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SezzleCheckoutExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductViewController.swift; sourceTree = "<group>"; };
@@ -75,7 +81,10 @@
 			children = (
 				5303C7D1D97720C5008659BD /* AppDelegate.swift */,
 				966B1375BF053959559B2976 /* Info.plist */,
+				341D197E5AAEF48B56EAA58E /* README.md */,
 				4E351981616068F58A5BAEFB /* SceneDelegate.swift */,
+				9AC4A8ECEE84EF1495BAC750 /* Secrets.swift */,
+				4A0642C8982B78496E63D006 /* Secrets.swift.template */,
 				3DBE142EA2A3071BB5BF94E4 /* Screens */,
 			);
 			path = SezzleCheckoutExample;
@@ -89,6 +98,7 @@
 			buildConfigurationList = AFAC8667C58C53287F121B29 /* Build configuration list for PBXNativeTarget "SezzleCheckoutExample" */;
 			buildPhases = (
 				EE4D24722043AE743F1F364F /* Sources */,
+				9530CFD91E380EC0F52C5845 /* Resources */,
 				07F60C4733DAD5A04C4F69BF /* Frameworks */,
 			);
 			buildRules = (
@@ -136,6 +146,18 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		9530CFD91E380EC0F52C5845 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				78829105EC10CCF687918063 /* README.md in Resources */,
+				EC450FC4D11849CE5BE7E851 /* Secrets.swift.template in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		EE4D24722043AE743F1F364F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -145,6 +167,7 @@
 				F514F4F8341CD6A9CC67E2A0 /* ProductViewController.swift in Sources */,
 				2B1C3A9AC892CE99475693A6 /* ResultViewController.swift in Sources */,
 				4F4E9202FBC35607B3C6C152 /* SceneDelegate.swift in Sources */,
+				FE6EADF69812AE0A1593C211 /* Secrets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
