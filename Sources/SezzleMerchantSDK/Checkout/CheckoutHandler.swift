@@ -9,6 +9,7 @@ final class CheckoutHandler: NSObject {
     private var authSession: ASWebAuthenticationSession?
     private var presentationContext: DefaultPresentationContext?
     private var orderUUID: String?
+    private var resultDelivered = false
 
     nonisolated static let callbackScheme = "sezzle-sdk"
 
@@ -47,21 +48,21 @@ final class CheckoutHandler: NSObject {
             url: url,
             callbackURLScheme: Self.callbackScheme
         ) { [weak self] callbackURL, error in
-            guard let self else { return }
+            guard let self, !self.resultDelivered else { return }
 
             if let error = error as? ASWebAuthenticationSessionError,
                error.code == .canceledLogin {
-                self.delegate?.checkoutDidFail(error: .browserDismissed)
+                self.deliverResult { $0.checkoutDidFail(error: .browserDismissed) }
                 return
             }
 
             if let error {
-                self.delegate?.checkoutDidFail(error: .networkError(error))
+                self.deliverResult { $0.checkoutDidFail(error: .networkError(error)) }
                 return
             }
 
             guard let callbackURL else {
-                self.delegate?.checkoutDidFail(error: .invalidResponse)
+                self.deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
                 return
             }
 
@@ -77,27 +78,37 @@ final class CheckoutHandler: NSObject {
         self.authSession = session
     }
 
+    /// Deliver a result exactly once, then clean up.
+    private func deliverResult(_ action: (any SezzleCheckoutDelegate) -> Void) {
+        guard !resultDelivered, let delegate else { return }
+        resultDelivered = true
+        action(delegate)
+        cleanup()
+    }
+
     private func handleCallback(_ url: URL) {
         let path = url.host ?? url.path
 
         switch path {
         case "checkout":
-            // URL format: sezzle-sdk://checkout/confirmed or sezzle-sdk://checkout/cancelled
             let action = url.pathComponents.last
             if action == "confirmed", let orderUUID {
-                delegate?.checkoutDidComplete(orderUUID: orderUUID)
+                deliverResult { $0.checkoutDidComplete(orderUUID: orderUUID) }
             } else if action == "cancelled" {
-                delegate?.checkoutDidCancel()
+                deliverResult { $0.checkoutDidCancel() }
             } else {
-                delegate?.checkoutDidFail(error: .invalidResponse)
+                deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
             }
         default:
-            delegate?.checkoutDidFail(error: .invalidResponse)
+            deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
         }
+    }
 
+    private func cleanup() {
         authSession = nil
         presentationContext = nil
         orderUUID = nil
+        delegate = nil
     }
 }
 
