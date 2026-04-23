@@ -5,8 +5,7 @@ Let your customers pay with Sezzle directly in your iOS app. The SDK handles che
 ## Requirements
 
 - iOS 14.0+
-- Swift 6.2+
-- Xcode 26+
+- Xcode 16+
 
 ## Installation
 
