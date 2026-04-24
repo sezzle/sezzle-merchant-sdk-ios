@@ -134,8 +134,8 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
             )
         )
 
-        // Start the Sezzle checkout — opens a secure browser
-        SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self)
+        // Start the Sezzle checkout — opens in a WebView inside the app
+        SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
     }
 
     // MARK: - SezzleCheckoutDelegate
