@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `SezzleCheckoutMode` — choose between `.systemBrowser` (default) or `.webView` to present checkout in a WKWebView inside the app
+- `SezzleCheckoutWebViewController` — internal WKWebView-based checkout that intercepts `sezzle-sdk://` callbacks via `WKNavigationDelegate`
+
 ### Fixed
 - Guard against double delegate callbacks — `CheckoutHandler` now delivers results exactly once per checkout, preventing stale state from previous checkouts leaking into subsequent ones
 - Delegate and internal state cleaned up immediately after result delivery

@@ -50,13 +50,14 @@ public final class SezzleSDK {
 
     /// Start a Sezzle checkout.
     ///
-    /// Opens the Sezzle checkout in a secure system browser. When the user completes,
+    /// Opens the Sezzle checkout in a browser. When the user completes,
     /// cancels, or encounters an error, the appropriate delegate method is called.
     ///
     /// - Parameters:
     ///   - checkout: The customer and order data for this checkout.
-    ///   - viewController: The view controller to present the checkout browser from.
+    ///   - viewController: The view controller to present the checkout from.
     ///   - delegate: Receives checkout completion, cancellation, or error callbacks.
+    ///   - mode: How the checkout is presented. Defaults to `.systemBrowser`.
     ///
     /// The delegate's ``SezzleCheckoutDelegate/checkoutDidComplete(orderUUID:)`` returns
     /// the Sezzle order UUID. Send this to your backend to capture the payment via
@@ -64,7 +65,8 @@ public final class SezzleSDK {
     public func startCheckout(
         _ checkout: SezzleCheckout,
         from viewController: UIViewController,
-        delegate: any SezzleCheckoutDelegate
+        delegate: any SezzleCheckoutDelegate,
+        mode: SezzleCheckoutMode = .systemBrowser
     ) {
         guard let publicKey, let environment else {
             delegate.checkoutDidFail(error: .notConfigured)
@@ -75,7 +77,7 @@ public final class SezzleSDK {
         let sessionService = SessionService(httpClient: httpClient)
         let handler = CheckoutHandler(sessionService: sessionService)
         self.checkoutHandler = handler
-        handler.startCheckout(checkout, from: viewController, delegate: delegate)
+        handler.startCheckout(checkout, from: viewController, delegate: delegate, mode: mode)
     }
 
     /// Whether the SDK has been configured.

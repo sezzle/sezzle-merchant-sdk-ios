@@ -20,7 +20,8 @@ final class CheckoutHandler: NSObject {
     func startCheckout(
         _ checkout: SezzleCheckout,
         from viewController: UIViewController,
-        delegate: any SezzleCheckoutDelegate
+        delegate: any SezzleCheckoutDelegate,
+        mode: SezzleCheckoutMode
     ) {
         self.delegate = delegate
 
@@ -34,7 +35,17 @@ final class CheckoutHandler: NSObject {
                     return
                 }
 
-                openBrowser(url: checkoutURL, from: viewController)
+                switch mode {
+                case .systemBrowser:
+                    openBrowser(url: checkoutURL, from: viewController)
+                case .webView:
+                    let webVC = SezzleCheckoutWebViewController(
+                        checkoutURL: checkoutURL,
+                        orderUUID: response.order.uuid,
+                        delegate: delegate
+                    )
+                    viewController.present(webVC, animated: true)
+                }
             } catch let error as SezzleError {
                 delegate.checkoutDidFail(error: error)
             } catch {
