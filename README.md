@@ -169,6 +169,16 @@ SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self)
 
 This opens the Sezzle checkout in a secure system browser. No WebView, no Info.plist changes — it just works.
 
+### WebView Mode
+
+To keep the user inside your app during checkout, use `.webView` mode:
+
+```swift
+SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
+```
+
+The checkout opens in an embedded WKWebView with a clean header. Trade-off: no cookie sharing with Safari (user logs in every time).
+
 ### Parameters
 
 | Parameter | Required | Description |
