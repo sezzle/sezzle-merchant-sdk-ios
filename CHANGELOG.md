@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example app shows all 4 widget variants: hidden, PI4, PI5, and long-term
 
 ### Fixed
+- WebView checkout redirect: registered `sezzle-sdk://` as a custom URL scheme via `WKURLSchemeHandler` + KVO observer so WKWebView properly intercepts the checkout completion redirect
+- Multiple fallback layers for redirect detection: `decidePolicyFor`, `didFinish` URL check, `didFailProvisionalNavigation` failing URL check, KVO on webView.url
+
+### Fixed
 - Guard against double delegate callbacks — `CheckoutHandler` now delivers results exactly once per checkout, preventing stale state from previous checkouts leaking into subsequent ones
 - Delegate and internal state cleaned up immediately after result delivery
 

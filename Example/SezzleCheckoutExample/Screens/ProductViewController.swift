@@ -159,7 +159,6 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
             )
         )
 
-        // Use WebView mode for demo
         SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
     }
 
