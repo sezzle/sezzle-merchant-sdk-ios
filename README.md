@@ -75,14 +75,20 @@ struct MyApp: App {
 
 ## Step 2: Add Promotional Messaging
 
-Show "or 4 interest-free payments of $X.XX with Sezzle" on your product or cart pages.
+The widget automatically shows the right message based on the product price:
+
+- **Under $50:** "or 4 payments of $X.XX with Sezzle"
+- **$50 and over:** "or 5 payments of $X.XX with Sezzle"
+- **Long-term eligible:** "or monthly payments as low as $X.XX with Sezzle"
+- **Below $35 or above $2,500:** hidden
 
 ```swift
 import SezzleMerchantSDK
 
+// Basic — uses default config (PI4 under $50, PI5 at $50+)
 let promoView = SezzlePromotionalView(
-    amountInCents: 4999,           // $49.99
-    presentingFrom: self           // tapping opens an info modal
+    amountInCents: 4999,           // $49.99 → "or 4 payments of $12.49"
+    presentingFrom: self
 )
 stackView.addArrangedSubview(promoView)
 ```
@@ -93,9 +99,30 @@ Update when the price changes:
 promoView.update(amountInCents: newTotalInCents)
 ```
 
-The view auto-hides if the amount is below the $35 minimum or above the $2,500 maximum.
+Tapping the view opens an info modal showing the payment schedule.
 
-Tapping the view automatically opens an info modal showing how Sezzle works, with a 4-payment schedule and due dates.
+### Widget Configuration
+
+Customize thresholds and enable long-term payments:
+
+```swift
+// Enable long-term monthly payments for orders over $250
+let config = SezzleWidgetConfig(
+    minPriceInCents: 3500,         // $35 minimum (default)
+    maxPriceInCents: 250_000,      // $2,500 PI4/PI5 max (default)
+    enablePayIn5: true,            // 5-pay for $50+ (default: true)
+    pi5MinPriceInCents: 5000,      // $50 PI5 threshold (default)
+    longTermConfig: SezzleLongTermConfig(
+        minPriceInCents: 25_000    // LT kicks in at $250+
+    )
+)
+
+let promoView = SezzlePromotionalView(
+    amountInCents: 79900,          // $799 → "or monthly payments as low as $36.13"
+    widgetConfig: config,
+    presentingFrom: self
+)
+```
 
 ### Styling
 
@@ -106,26 +133,14 @@ let promoView = SezzlePromotionalView(
     style: .dark,
     presentingFrom: self
 )
-
-// Custom style
-let customStyle = SezzlePromotionalStyle(
-    logoVariant: .dark,
-    font: .systemFont(ofSize: 13),
-    textColor: .gray
-)
-let promoView = SezzlePromotionalView(
-    amountInCents: 4999,
-    style: customStyle,
-    presentingFrom: self
-)
 ```
 
 ### Custom Promo UI
 
-If you want full control over the promotional message, use `SezzlePromoDataHandler` to get a raw attributed string:
+For full control over the promotional message:
 
 ```swift
-SezzlePromoDataHandler.getMessage(amountInCents: 4999) { attributedString in
+SezzlePromoDataHandler.getMessage(amountInCents: 4999, widgetConfig: config) { attributedString in
     myCustomLabel.attributedText = attributedString
 }
 ```
