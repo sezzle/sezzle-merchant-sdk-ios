@@ -1,24 +1,26 @@
 import UIKit
 import SezzleMerchantSDK
 
-/// Shows a product with a Sezzle promotional message and a "Pay with Sezzle" button.
-///
-/// Demonstrates how to:
-/// - Embed `SezzlePromotionalView` on a product page
-/// - Build a `SezzleCheckout` from product data
-/// - Start the checkout flow
+/// Shows multiple products at different price points demonstrating all widget variants.
 final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
 
-    // Sample product data
-    private let productName = "Premium Wireless Headphones"
-    private let productPriceInCents = 4999 // $49.99
-    private let productCurrency = "USD"
+    // Widget config with long-term enabled for demo (LT kicks in at $250+)
+    private let widgetConfig = SezzleWidgetConfig(
+        enablePayIn5: true,
+        longTermConfig: SezzleLongTermConfig(minPriceInCents: 25_000)
+    )
 
-    private var promoView: SezzlePromotionalView!
+    // Products at different price points showing all widget variants
+    private let products: [(name: String, emoji: String, priceInCents: Int, description: String)] = [
+        ("Phone Case", "\u{1F4F1}", 1500, "Below $35 min — widget hidden"),
+        ("Wireless Earbuds", "\u{1F3A7}", 3999, "$39.99 — 4 payments (under PI5 $50 threshold)"),
+        ("Premium Headphones", "\u{1F3A7}", 14999, "$149.99 — 5 payments (PI5 eligible, over $50)"),
+        ("Smart Watch", "\u{231A}", 79900, "$799 — long-term monthly payments (over $250)"),
+    ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Product"
+        title = "Sezzle Widget Demo"
         view.backgroundColor = .systemBackground
         setupUI()
     }
@@ -30,7 +32,7 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
 
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 16
+        stack.spacing = 24
         stack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stack)
 
@@ -39,80 +41,103 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
+            stack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
             stack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 20),
             stack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -20),
             stack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
             stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40),
         ])
 
-        // Product image placeholder
-        let imageView = UIView()
-        imageView.backgroundColor = .systemGray5
-        imageView.layer.cornerRadius = 12
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.heightAnchor.constraint(equalToConstant: 200).isActive = true
-        let imageLabel = UILabel()
-        imageLabel.text = "🎧"
-        imageLabel.font = .systemFont(ofSize: 60)
-        imageLabel.textAlignment = .center
-        imageLabel.translatesAutoresizingMaskIntoConstraints = false
-        imageView.addSubview(imageLabel)
+        for (index, product) in products.enumerated() {
+            let card = createProductCard(product: product, index: index)
+            stack.addArrangedSubview(card)
+        }
+    }
+
+    private func createProductCard(product: (name: String, emoji: String, priceInCents: Int, description: String), index: Int) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor.separator.cgColor
+
+        let cardStack = UIStackView()
+        cardStack.axis = .vertical
+        cardStack.spacing = 8
+        cardStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(cardStack)
+
         NSLayoutConstraint.activate([
-            imageLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
-            imageLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor),
+            cardStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            cardStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            cardStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            cardStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
         ])
-        stack.addArrangedSubview(imageView)
 
-        // Product name
+        // Emoji + name row
+        let nameRow = UIStackView()
+        nameRow.axis = .horizontal
+        nameRow.spacing = 8
+        let emojiLabel = UILabel()
+        emojiLabel.text = product.emoji
+        emojiLabel.font = .systemFont(ofSize: 28)
+        nameRow.addArrangedSubview(emojiLabel)
         let nameLabel = UILabel()
-        nameLabel.text = productName
-        nameLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        nameLabel.numberOfLines = 0
-        stack.addArrangedSubview(nameLabel)
+        nameLabel.text = product.name
+        nameLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        nameRow.addArrangedSubview(nameLabel)
+        nameRow.addArrangedSubview(UIView()) // spacer
+        cardStack.addArrangedSubview(nameRow)
 
-        // Product price
+        // Price
         let priceLabel = UILabel()
-        priceLabel.text = formatPrice(productPriceInCents)
-        priceLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        priceLabel.text = formatPrice(product.priceInCents)
+        priceLabel.font = .systemFont(ofSize: 16, weight: .bold)
         priceLabel.textColor = .label
-        stack.addArrangedSubview(priceLabel)
+        cardStack.addArrangedSubview(priceLabel)
 
-        // Sezzle promotional view
-        promoView = SezzlePromotionalView(
-            amountInCents: productPriceInCents,
-            currency: productCurrency,
+        // Description (explains which variant)
+        let descLabel = UILabel()
+        descLabel.text = product.description
+        descLabel.font = .systemFont(ofSize: 12)
+        descLabel.textColor = .secondaryLabel
+        descLabel.numberOfLines = 0
+        cardStack.addArrangedSubview(descLabel)
+
+        // Sezzle promo view
+        let promoView = SezzlePromotionalView(
+            amountInCents: product.priceInCents,
+            widgetConfig: widgetConfig,
             presentingFrom: self
         )
-        stack.addArrangedSubview(promoView)
-
-        // Spacer
-        let spacer = UIView()
-        spacer.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        stack.addArrangedSubview(spacer)
+        cardStack.addArrangedSubview(promoView)
 
         // Pay with Sezzle button
         let checkoutButton = UIButton(type: .system)
         checkoutButton.setTitle("Pay with Sezzle", for: .normal)
-        checkoutButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        checkoutButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
         checkoutButton.backgroundColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1)
         checkoutButton.setTitleColor(.white, for: .normal)
-        checkoutButton.layer.cornerRadius = 12
-        checkoutButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        checkoutButton.addTarget(self, action: #selector(startCheckout), for: .touchUpInside)
-        stack.addArrangedSubview(checkoutButton)
+        checkoutButton.layer.cornerRadius = 10
+        checkoutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        checkoutButton.tag = index
+        checkoutButton.addTarget(self, action: #selector(startCheckout(_:)), for: .touchUpInside)
+        cardStack.addArrangedSubview(checkoutButton)
+
+        return card
     }
 
     private func formatPrice(_ cents: Int) -> String {
         let dollars = Double(cents) / 100.0
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = productCurrency
+        formatter.currencyCode = "USD"
         return formatter.string(from: NSNumber(value: dollars)) ?? "$\(String(format: "%.2f", dollars))"
     }
 
-    @objc private func startCheckout() {
-        // Build the checkout from product data
+    @objc private func startCheckout(_ sender: UIButton) {
+        let product = products[sender.tag]
+
         let checkout = SezzleCheckout(
             customer: SezzleCustomer(
                 email: "test@example.com",
@@ -121,29 +146,27 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
             ),
             order: SezzleOrder(
                 referenceId: "example-order-\(Int.random(in: 1000...9999))",
-                description: productName,
-                amount: SezzleAmount(amountInCents: productPriceInCents, currency: productCurrency),
+                description: product.name,
+                amount: SezzleAmount(amountInCents: product.priceInCents, currency: "USD"),
                 items: [
                     SezzleItem(
-                        name: productName,
-                        sku: "headphones-premium-001",
+                        name: product.name,
+                        sku: "demo-\(sender.tag)",
                         quantity: 1,
-                        price: SezzleAmount(amountInCents: productPriceInCents, currency: productCurrency)
+                        price: SezzleAmount(amountInCents: product.priceInCents, currency: "USD")
                     )
                 ]
             )
         )
 
-        // Start the Sezzle checkout — opens in a WebView inside the app
+        // Use WebView mode for demo
         SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
     }
 
     // MARK: - SezzleCheckoutDelegate
 
     func checkoutDidComplete(orderUUID: String) {
-        let resultVC = ResultViewController(
-            result: .success(orderUUID: orderUUID)
-        )
+        let resultVC = ResultViewController(result: .success(orderUUID: orderUUID))
         navigationController?.pushViewController(resultVC, animated: true)
     }
 
@@ -153,9 +176,7 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
     }
 
     func checkoutDidFail(error: SezzleError) {
-        let resultVC = ResultViewController(
-            result: .failed(error: error)
-        )
+        let resultVC = ResultViewController(result: .failed(error: error))
         navigationController?.pushViewController(resultVC, animated: true)
     }
 }

@@ -30,7 +30,7 @@ enum SezzleBrand {
     // MARK: - Pie Chart SVG Paths
 
     /// Draw a pie chart showing payment progress (1 of 4, 2 of 4, etc.)
-    static func pieChartLayer(step: Int, size: CGFloat) -> CAShapeLayer {
+    static func pieChartLayer(step: Int, totalSteps: Int = 4, size: CGFloat) -> CAShapeLayer {
         let center = CGPoint(x: size / 2, y: size / 2)
         let radius = size / 2
         let startAngle = -CGFloat.pi / 2
@@ -42,7 +42,7 @@ enum SezzleBrand {
 
         // Filled portion
         let fillLayer = CAShapeLayer()
-        let endAngle = startAngle + (CGFloat(step) / 4.0) * .pi * 2
+        let endAngle = startAngle + (CGFloat(step) / CGFloat(totalSteps)) * .pi * 2
         let path = UIBezierPath()
         path.move(to: center)
         path.addArc(withCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
@@ -58,8 +58,8 @@ enum SezzleBrand {
         return container
     }
 
-    /// Create a pie chart UIView for a given payment step (1–4).
-    static func pieChartView(step: Int, size: CGFloat = 36) -> UIView {
+    /// Create a pie chart UIView for a given payment step.
+    static func pieChartView(step: Int, totalSteps: Int = 4, size: CGFloat = 36) -> UIView {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: size, height: size))
         view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -68,7 +68,7 @@ enum SezzleBrand {
         ])
         view.layer.cornerRadius = size / 2
         view.clipsToBounds = true
-        let chart = pieChartLayer(step: step, size: size)
+        let chart = pieChartLayer(step: step, totalSteps: totalSteps, size: size)
         view.layer.addSublayer(chart)
         return view
     }

@@ -2,23 +2,20 @@ import UIKit
 
 /// A drop-in view that displays Sezzle installment messaging with brand styling.
 ///
-/// Place this on product pages, cart pages, or anywhere you want to show
-/// "or 4 interest-free payments of $X.XX with Sezzle". Tapping the view
-/// opens ``SezzleInfoModal`` automatically.
+/// Shows different messages based on the price:
+/// - Under $50: "or 4 payments of $X.XX with Sezzle"
+/// - $50+: "or 5 payments of $X.XX with Sezzle" (when PI5 enabled)
+/// - Long-term eligible: "or monthly payments as low as $X.XX with Sezzle"
+/// - Below min or above max: hidden
 ///
-/// ```swift
-/// let promoView = SezzlePromotionalView(
-///     amountInCents: product.priceInCents,
-///     presentingFrom: self
-/// )
-/// stackView.addArrangedSubview(promoView)
-/// ```
+/// Tapping opens the appropriate info modal.
 @MainActor
 public final class SezzlePromotionalView: UIView {
     private let messageLabel = UILabel()
     private var style: SezzlePromotionalStyle
     private var amountInCents: Int
     private var currency: String
+    private var widgetConfig: SezzleWidgetConfig
     private weak var presentingViewController: UIViewController?
 
     /// Create a promotional view.
@@ -27,16 +24,19 @@ public final class SezzlePromotionalView: UIView {
     ///   - amountInCents: The product or cart total in cents.
     ///   - currency: ISO 4217 currency code. Defaults to "USD".
     ///   - style: Visual style. Defaults to `.light`.
+    ///   - widgetConfig: Widget configuration. Defaults to standard config.
     ///   - viewController: The view controller used to present the info modal on tap.
     public init(
         amountInCents: Int,
         currency: String = "USD",
         style: SezzlePromotionalStyle = .light,
+        widgetConfig: SezzleWidgetConfig = .default,
         presentingFrom viewController: UIViewController
     ) {
         self.amountInCents = amountInCents
         self.currency = currency
         self.style = style
+        self.widgetConfig = widgetConfig
         self.presentingViewController = viewController
         super.init(frame: .zero)
         setupView()
@@ -47,9 +47,6 @@ public final class SezzlePromotionalView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     /// Update the displayed amount.
-    ///
-    /// Call this when the cart total or product price changes.
-    /// The view auto-hides if the amount falls below the $35 minimum.
     public func update(amountInCents: Int) {
         self.amountInCents = amountInCents
         render()
@@ -74,42 +71,33 @@ public final class SezzlePromotionalView: UIView {
     }
 
     private func render() {
-        guard InstallmentCalculator.isEligible(amountInCents: amountInCents) else {
+        let type = InstallmentCalculator.widgetType(amountInCents: amountInCents, config: widgetConfig)
+
+        guard type != .hidden else {
             isHidden = true
             return
         }
 
         isHidden = false
-        let installments = InstallmentCalculator.installments(amountInCents: amountInCents)
-        let formatted = InstallmentCalculator.formatCents(installments[0], currency: currency)
-
-        // Use the shared builder which handles logo inline
-        let attributed = NSMutableAttributedString(
-            attributedString: SezzlePromoDataHandler.buildAttributedMessage(
-                installmentAmount: formatted,
-                style: style
-            )
+        let attributed = SezzlePromoDataHandler.buildAttributedMessage(
+            amountInCents: amountInCents,
+            widgetType: type,
+            currency: currency,
+            style: style,
+            widgetConfig: widgetConfig
         )
-
-        // Info icon in purple — use non-breaking space so logo and ⓘ stay on the same line
-        attributed.append(NSAttributedString(
-            string: "\u{00A0}ⓘ",
-            attributes: [
-                .font: UIFont.systemFont(ofSize: style.font.pointSize - 1),
-                .foregroundColor: SezzleBrand.purple
-            ]
-        ))
-
-        // Add line spacing for breathing room when text wraps
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 6
-        attributed.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: attributed.length))
-
         messageLabel.attributedText = attributed
     }
 
     @objc private func handleTap() {
         guard let vc = presentingViewController else { return }
-        SezzleInfoModal.present(amountInCents: amountInCents, currency: currency, from: vc)
+        let type = InstallmentCalculator.widgetType(amountInCents: amountInCents, config: widgetConfig)
+        SezzleInfoModal.present(
+            amountInCents: amountInCents,
+            currency: currency,
+            widgetType: type,
+            widgetConfig: widgetConfig,
+            from: vc
+        )
     }
 }
