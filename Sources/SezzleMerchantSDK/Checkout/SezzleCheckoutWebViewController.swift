@@ -98,11 +98,13 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         view.addSubview(webView)
 
         // KVO fallback — observe URL changes to catch any redirect method
-        urlObservation = webView.observe(\.url, options: [.new]) { [weak self] webView, change in
+        urlObservation = webView.observe(\.url, options: [.new]) { [weak self] _, change in
             guard let self, let url = change.newValue as? URL,
                   url.scheme == CheckoutHandler.callbackScheme else { return }
-            self.handleCallback(url)
-            self.dismiss(animated: true)
+            Task { @MainActor in
+                self.handleCallback(url)
+                self.dismiss(animated: true)
+            }
         }
 
         NSLayoutConstraint.activate([

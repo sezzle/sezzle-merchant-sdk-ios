@@ -41,7 +41,17 @@ public enum SezzlePromoDataHandler {
     /// The bundled Sezzle logo, loaded once from the SDK's resource bundle.
     @MainActor
     private static var cachedLogo: UIImage? = {
-        if let url = Bundle.module.url(forResource: "sezzle_logo", withExtension: "png"),
+        // CocoaPods resource bundle
+        let frameworkBundle = Bundle(for: SezzlePromotionalView.self)
+        if let podBundleURL = frameworkBundle.url(forResource: "SezzleMerchantSDK", withExtension: "bundle"),
+           let podBundle = Bundle(url: podBundleURL),
+           let url = podBundle.url(forResource: "sezzle_logo", withExtension: "png"),
+           let data = try? Data(contentsOf: url),
+           let image = UIImage(data: data) {
+            return image
+        }
+        // SPM / direct framework — resources in the same bundle
+        if let url = frameworkBundle.url(forResource: "sezzle_logo", withExtension: "png"),
            let data = try? Data(contentsOf: url),
            let image = UIImage(data: data) {
             return image

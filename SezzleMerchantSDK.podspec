@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   s.swift_version    = '6.2'
 
   s.source_files     = 'Sources/SezzleMerchantSDK/**/*.swift'
-  s.resources        = 'Sources/SezzleMerchantSDK/Resources/**/*'
+  s.resource_bundles = { 'SezzleMerchantSDK' => ['Sources/SezzleMerchantSDK/Resources/**/*'] }
 
   s.frameworks       = 'UIKit', 'AuthenticationServices'
 end

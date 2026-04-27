@@ -59,6 +59,7 @@ enum SezzleBrand {
     }
 
     /// Create a pie chart UIView for a given payment step.
+    @MainActor
     static func pieChartView(step: Int, totalSteps: Int = 4, size: CGFloat = 36) -> UIView {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: size, height: size))
         view.translatesAutoresizingMaskIntoConstraints = false
