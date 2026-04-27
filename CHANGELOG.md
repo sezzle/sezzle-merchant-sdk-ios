@@ -5,7 +5,7 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2026-04-27
 
 ### Added
 - `SezzleWidgetConfig` — configurable widget with PI4/PI5/long-term support matching sezzle-js source of truth
@@ -19,12 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example app shows all 4 widget variants: hidden, PI4, PI5, and long-term
 
 ### Fixed
-- WebView checkout redirect: registered `sezzle-sdk://` as a custom URL scheme via `WKURLSchemeHandler` + KVO observer so WKWebView properly intercepts the checkout completion redirect
-- Multiple fallback layers for redirect detection: `decidePolicyFor`, `didFinish` URL check, `didFailProvisionalNavigation` failing URL check, KVO on webView.url
-
-### Fixed
-- Guard against double delegate callbacks — `CheckoutHandler` now delivers results exactly once per checkout, preventing stale state from previous checkouts leaking into subsequent ones
-- Delegate and internal state cleaned up immediately after result delivery
+- Guard against double delegate callbacks — delivers results exactly once per checkout
+- WebView checkout redirect: `WKURLSchemeHandler` + KVO observer + error handler fallbacks
+- SPM + CocoaPods resource compatibility via `BundleHelper`
 
 ## [1.0.0] - 2026-04-22
 
