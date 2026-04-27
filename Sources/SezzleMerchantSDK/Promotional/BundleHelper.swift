@@ -3,7 +3,7 @@ import Foundation
 /// Finds the resource bundle for the SDK.
 /// SPM uses Bundle.module (auto-generated). CocoaPods uses resource_bundles.
 enum SezzleBundle {
-    nonisolated(unsafe) static let resourceBundle: Bundle = {
+    static let resourceBundle: Bundle = {
         #if SWIFT_PACKAGE
         return Bundle.module
         #else

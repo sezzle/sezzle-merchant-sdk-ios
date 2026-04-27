@@ -140,7 +140,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
-        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
     ) {
         guard let url = navigationAction.request.url,
               url.scheme == CheckoutHandler.callbackScheme else {
@@ -156,7 +156,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationResponse: WKNavigationResponse,
-        decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+        decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void
     ) {
         if let url = navigationResponse.response.url,
            url.scheme == CheckoutHandler.callbackScheme {
