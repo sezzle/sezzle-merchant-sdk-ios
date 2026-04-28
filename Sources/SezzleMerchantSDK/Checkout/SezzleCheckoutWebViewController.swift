@@ -55,12 +55,14 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         header.addSubview(titleLabel)
 
-        let backButton = UIButton(type: .system)
-        backButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
-        backButton.tintColor = .label
-        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        header.addSubview(backButton)
+        let backBtn = UIButton(type: .system)
+        backBtn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        backBtn.tintColor = .label
+        backBtn.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        backBtn.translatesAutoresizingMaskIntoConstraints = false
+        backBtn.isHidden = true  // Hidden until there's a page to go back to
+        header.addSubview(backBtn)
+        self.backButton = backBtn
 
         let closeButton = UIButton(type: .system)
         closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
@@ -78,10 +80,10 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
             titleLabel.centerXAnchor.constraint(equalTo: header.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: header.centerYAnchor),
 
-            backButton.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
-            backButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: 30),
-            backButton.heightAnchor.constraint(equalToConstant: 30),
+            backBtn.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+            backBtn.centerYAnchor.constraint(equalTo: header.centerYAnchor),
+            backBtn.widthAnchor.constraint(equalToConstant: 30),
+            backBtn.heightAnchor.constraint(equalToConstant: 30),
 
             closeButton.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -16),
             closeButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
@@ -96,6 +98,8 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     }
 
     private var urlObservation: NSKeyValueObservation?
+    private var canGoBackObservation: NSKeyValueObservation?
+    private weak var backButton: UIButton?
 
     private func setupWebView() {
         let config = WKWebViewConfiguration()
@@ -108,6 +112,13 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
+
+        // Show/hide back button based on web history
+        canGoBackObservation = webView.observe(\.canGoBack, options: [.new]) { [weak self] _, change in
+            Task { @MainActor in
+                self?.backButton?.isHidden = !(change.newValue ?? false)
+            }
+        }
 
         // KVO fallback — observe URL changes to catch any redirect method
         urlObservation = webView.observe(\.url, options: [.new]) { [weak self] _, change in
