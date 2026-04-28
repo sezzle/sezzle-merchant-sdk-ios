@@ -38,16 +38,33 @@ public enum SezzlePromoDataHandler {
         completion(message)
     }
 
-    /// The bundled Sezzle logo, loaded once from the SDK's resource bundle.
+    @MainActor private static var cachedLogoLight: UIImage?
+    @MainActor private static var cachedLogoDark: UIImage?
+
+    /// Load the appropriate logo for the current style.
     @MainActor
-    private static var cachedLogo: UIImage? = {
-        if let url = SezzleBundle.resourceBundle.url(forResource: "sezzle_logo", withExtension: "png"),
-           let data = try? Data(contentsOf: url),
-           let image = UIImage(data: data) {
-            return image
+    private static func logo(for style: SezzlePromotionalStyle) -> UIImage? {
+        let isDark = style.logoVariant == .light // light logo variant = dark background
+        if isDark {
+            if cachedLogoDark == nil {
+                cachedLogoDark = loadImage(named: "sezzle_logo_dark") ?? loadImage(named: "sezzle_logo")
+            }
+            return cachedLogoDark
+        } else {
+            if cachedLogoLight == nil {
+                cachedLogoLight = loadImage(named: "sezzle_logo")
+            }
+            return cachedLogoLight
+        }
+    }
+
+    private static func loadImage(named name: String) -> UIImage? {
+        if let url = SezzleBundle.resourceBundle.url(forResource: name, withExtension: "png"),
+           let data = try? Data(contentsOf: url) {
+            return UIImage(data: data)
         }
         return nil
-    }()
+    }
 
     @MainActor
     static func buildAttributedMessage(
@@ -115,8 +132,8 @@ public enum SezzlePromoDataHandler {
             return attributed
         }
 
-        // Sezzle logo
-        if let logo = cachedLogo {
+        // Sezzle logo — pick light or dark variant based on style
+        if let logo = logo(for: style) {
             let attachment = NSTextAttachment()
             let logoHeight = style.font.pointSize * 1.3
             let logoWidth = logoHeight * (logo.size.width / logo.size.height)

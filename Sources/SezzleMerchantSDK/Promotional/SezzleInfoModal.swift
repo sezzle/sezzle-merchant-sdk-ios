@@ -90,12 +90,18 @@ final class SezzleInfoViewController: UIViewController {
         ])
 
         // Sezzle logo
-        let logoLabel = UILabel()
-        logoLabel.text = "\u{2726} sezzle"
-        logoLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        logoLabel.textColor = SezzleBrand.darkPurple
-        logoLabel.textAlignment = .center
-        stack.addArrangedSubview(logoLabel)
+        let isDark = traitCollection.userInterfaceStyle == .dark
+        let logoName = isDark ? "sezzle_logo_dark" : "sezzle_logo"
+        if let logoURL = SezzleBundle.resourceBundle.url(forResource: logoName, withExtension: "png"),
+           let logoData = try? Data(contentsOf: logoURL),
+           let logoImage = UIImage(data: logoData) {
+            let logoView = UIImageView(image: logoImage)
+            logoView.contentMode = .scaleAspectFit
+            logoView.translatesAutoresizingMaskIntoConstraints = false
+            logoView.heightAnchor.constraint(equalToConstant: 28).isActive = true
+            logoView.widthAnchor.constraint(equalToConstant: 28 * (logoImage.size.width / logoImage.size.height)).isActive = true
+            stack.addArrangedSubview(logoView)
+        }
 
         switch widgetType {
         case .pi4, .pi5:
@@ -187,6 +193,7 @@ final class SezzleInfoViewController: UIViewController {
     }
 
     private func createPaymentColumn(step: Int, total: Int, amount: String, dateLabel: String, weekLabel: String, isFirst: Bool) -> UIView {
+        let isDark = traitCollection.userInterfaceStyle == .dark
         let column = UIStackView()
         column.axis = .vertical
         column.spacing = 4
@@ -194,14 +201,14 @@ final class SezzleInfoViewController: UIViewController {
 
         // Dot indicator
         let dotSize: CGFloat = total <= 4 ? 36 : 28
-        let pie = SezzleBrand.pieChartView(step: step, totalSteps: total, size: dotSize)
+        let pie = SezzleBrand.pieChartView(step: step, totalSteps: total, size: dotSize, isDark: isDark)
         column.addArrangedSubview(pie)
 
         // Amount
         let amountLabel = UILabel()
         amountLabel.text = amount
-        amountLabel.font = .systemFont(ofSize: total <= 4 ? 13 : 11, weight: .medium)
-        amountLabel.textColor = SezzleBrand.purple
+        amountLabel.font = .systemFont(ofSize: total <= 4 ? 13 : 11, weight: .bold)
+        amountLabel.textColor = SezzleBrand.scheduleAmount
         amountLabel.textAlignment = .center
         column.addArrangedSubview(amountLabel)
 
@@ -209,7 +216,7 @@ final class SezzleInfoViewController: UIViewController {
         let dateText = UILabel()
         dateText.text = dateLabel
         dateText.font = .systemFont(ofSize: 10)
-        dateText.textColor = isFirst ? SezzleBrand.green : SezzleBrand.gray
+        dateText.textColor = isFirst ? SezzleBrand.green : SezzleBrand.scheduleDate
         dateText.textAlignment = .center
         column.addArrangedSubview(dateText)
 

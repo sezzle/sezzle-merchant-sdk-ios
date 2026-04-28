@@ -126,8 +126,10 @@ let promoView = SezzlePromotionalView(
 
 ### Styling
 
+`SezzlePromotionalView` automatically detects dark mode and selects the correct logo variant. You can also override the style manually:
+
 ```swift
-// Dark theme (light text for dark backgrounds)
+// Explicit dark theme (light text + white logo for dark backgrounds)
 let promoView = SezzlePromotionalView(
     amountInCents: 4999,
     style: .dark,

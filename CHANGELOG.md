@@ -5,6 +5,25 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-04-28
+
+### Added
+- Dark mode logo variant — white wordmark (`Sezzle_Logo_FullColor_WhiteWM`) for dark backgrounds
+- Auto-detection of dark mode in `SezzlePromotionalView` — selects correct logo variant automatically
+- `SezzleLogoVariant` enum for explicit light/dark logo control
+- `traitCollectionDidChange` support — promo view re-renders when appearance changes
+- Centralized brand colors: `scheduleAmount`, `scheduleDate`, `pieChartBg` in `SezzleBrand`
+
+### Changed
+- Info modal header now shows the official Sezzle logo image instead of "✦ sezzle" text
+- High-quality logo PNGs (2394×599 @ 3x) converted from official CDN SVGs via cairosvg
+- Pie chart background in dark mode uses semi-transparent white for better contrast on purple cards
+- Schedule card amounts use white text in dark mode for readability
+
+### Fixed
+- Inline promo logo was always dark variant regardless of appearance mode
+- Schedule card text was barely readable in dark mode (purple on purple)
+
 ## [1.0.2] - 2026-04-27
 
 ### Fixed

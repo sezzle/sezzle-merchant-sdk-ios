@@ -79,14 +79,28 @@ public final class SezzlePromotionalView: UIView {
         }
 
         isHidden = false
+        // Auto-detect dark mode for the default style
+        let effectiveStyle: SezzlePromotionalStyle
+        if style.logoVariant == .dark && traitCollection.userInterfaceStyle == .dark {
+            effectiveStyle = .dark
+        } else {
+            effectiveStyle = style
+        }
         let attributed = SezzlePromoDataHandler.buildAttributedMessage(
             amountInCents: amountInCents,
             widgetType: type,
             currency: currency,
-            style: style,
+            style: effectiveStyle,
             widgetConfig: widgetConfig
         )
         messageLabel.attributedText = attributed
+    }
+
+    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            render()
+        }
     }
 
     @objc private func handleTap() {

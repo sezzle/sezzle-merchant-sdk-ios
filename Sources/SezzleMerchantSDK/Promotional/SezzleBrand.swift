@@ -8,28 +8,49 @@ enum SezzleBrand {
     static let purple = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1) // #8333D4
 
     /// Dark purple — headings, body text. Adapts to dark mode.
+    /// Light: #382757 (darkPurple100), Dark: #F9F5FD (purpleWhite80)
     static let darkPurple = UIColor { traitCollection in
         traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 0xE0/255, green: 0xD0/255, blue: 0xF0/255, alpha: 1)
-            : UIColor(red: 0x39/255, green: 0x25/255, blue: 0x58/255, alpha: 1)
+            ? UIColor(red: 0xF9/255, green: 0xF5/255, blue: 0xFD/255, alpha: 1)
+            : UIColor(red: 0x38/255, green: 0x27/255, blue: 0x57/255, alpha: 1)
     }
 
     /// Gray — due dates, secondary text. Adapts to dark mode.
+    /// Light: #767676 (darkGray100), Dark: #AEAEAE (gray100)
     static let gray = UIColor { traitCollection in
         traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 0xA0/255, green: 0xA0/255, blue: 0xA0/255, alpha: 1)
-            : UIColor(red: 0x5E/255, green: 0x5E/255, blue: 0x5E/255, alpha: 1)
+            ? UIColor(red: 0xAE/255, green: 0xAE/255, blue: 0xAE/255, alpha: 1)
+            : UIColor(red: 0x76/255, green: 0x76/255, blue: 0x76/255, alpha: 1)
     }
 
     /// Light purple background for cards. Adapts to dark mode.
     static let lightPurpleBg = UIColor { traitCollection in
         traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.15)
+            ? UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.20)
             : UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.05)
     }
 
     /// Green for first payment / "today" indicator.
     static let green = UIColor(red: 0x00/255, green: 0xB8/255, blue: 0x74/255, alpha: 1) // #00B874
+
+    /// Amount text on schedule cards. White in dark mode for contrast on purple card.
+    static let scheduleAmount = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark ? .white : purple
+    }
+
+    /// Date text on schedule cards. Brighter in dark mode for contrast on purple card.
+    static let scheduleDate = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(white: 0.75, alpha: 1)
+            : UIColor(red: 0x76/255, green: 0x76/255, blue: 0x76/255, alpha: 1)
+    }
+
+    /// Pie chart background. Semi-transparent white in dark mode for visibility on purple cards.
+    static let pieChartBg = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(white: 1.0, alpha: 0.25)
+            : UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.05)
+    }
 
     // MARK: - Logo
 
@@ -42,15 +63,15 @@ enum SezzleBrand {
     // MARK: - Pie Chart SVG Paths
 
     /// Draw a pie chart showing payment progress (1 of 4, 2 of 4, etc.)
-    static func pieChartLayer(step: Int, totalSteps: Int = 4, size: CGFloat) -> CAShapeLayer {
+    static func pieChartLayer(step: Int, totalSteps: Int = 4, size: CGFloat, isDark: Bool = false) -> CAShapeLayer {
         let center = CGPoint(x: size / 2, y: size / 2)
         let radius = size / 2
         let startAngle = -CGFloat.pi / 2
 
-        // Background circle (light)
+        // Background circle
         let bgLayer = CAShapeLayer()
         bgLayer.path = UIBezierPath(arcCenter: center, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true).cgPath
-        bgLayer.fillColor = lightPurpleBg.cgColor
+        bgLayer.fillColor = pieChartBg.resolvedColor(with: UITraitCollection(userInterfaceStyle: isDark ? .dark : .light)).cgColor
 
         // Filled portion
         let fillLayer = CAShapeLayer()
@@ -72,7 +93,7 @@ enum SezzleBrand {
 
     /// Create a pie chart UIView for a given payment step.
     @MainActor
-    static func pieChartView(step: Int, totalSteps: Int = 4, size: CGFloat = 36) -> UIView {
+    static func pieChartView(step: Int, totalSteps: Int = 4, size: CGFloat = 36, isDark: Bool = false) -> UIView {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: size, height: size))
         view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -81,7 +102,7 @@ enum SezzleBrand {
         ])
         view.layer.cornerRadius = size / 2
         view.clipsToBounds = true
-        let chart = pieChartLayer(step: step, totalSteps: totalSteps, size: size)
+        let chart = pieChartLayer(step: step, totalSteps: totalSteps, size: size, isDark: isDark)
         view.layer.addSublayer(chart)
         return view
     }
