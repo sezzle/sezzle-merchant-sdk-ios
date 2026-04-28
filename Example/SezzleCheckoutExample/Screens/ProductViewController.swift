@@ -112,17 +112,39 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         )
         cardStack.addArrangedSubview(promoView)
 
-        // Pay with Sezzle button
-        let checkoutButton = UIButton(type: .system)
-        checkoutButton.setTitle("Pay with Sezzle", for: .normal)
-        checkoutButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-        checkoutButton.backgroundColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1)
-        checkoutButton.setTitleColor(.white, for: .normal)
-        checkoutButton.layer.cornerRadius = 10
-        checkoutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        checkoutButton.tag = index
-        checkoutButton.addTarget(self, action: #selector(startCheckout(_:)), for: .touchUpInside)
-        cardStack.addArrangedSubview(checkoutButton)
+        // Checkout buttons row
+        let buttonRow = UIStackView()
+        buttonRow.axis = .horizontal
+        buttonRow.spacing = 8
+        buttonRow.distribution = .fillEqually
+
+        // System Browser button
+        let browserButton = UIButton(type: .system)
+        browserButton.setTitle("System Browser", for: .normal)
+        browserButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        browserButton.backgroundColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1)
+        browserButton.setTitleColor(.white, for: .normal)
+        browserButton.layer.cornerRadius = 10
+        browserButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        browserButton.tag = index
+        browserButton.addTarget(self, action: #selector(startCheckoutBrowser(_:)), for: .touchUpInside)
+        buttonRow.addArrangedSubview(browserButton)
+
+        // WebView button
+        let webViewButton = UIButton(type: .system)
+        webViewButton.setTitle("WebView", for: .normal)
+        webViewButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        webViewButton.backgroundColor = .systemBackground
+        webViewButton.setTitleColor(UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1), for: .normal)
+        webViewButton.layer.cornerRadius = 10
+        webViewButton.layer.borderWidth = 2
+        webViewButton.layer.borderColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1).cgColor
+        webViewButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        webViewButton.tag = index
+        webViewButton.addTarget(self, action: #selector(startCheckoutWebView(_:)), for: .touchUpInside)
+        buttonRow.addArrangedSubview(webViewButton)
+
+        cardStack.addArrangedSubview(buttonRow)
 
         return card
     }
@@ -135,10 +157,9 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         return formatter.string(from: NSNumber(value: dollars)) ?? "$\(String(format: "%.2f", dollars))"
     }
 
-    @objc private func startCheckout(_ sender: UIButton) {
-        let product = products[sender.tag]
-
-        let checkout = SezzleCheckout(
+    private func buildCheckout(for index: Int) -> SezzleCheckout {
+        let product = products[index]
+        return SezzleCheckout(
             customer: SezzleCustomer(
                 email: "test@example.com",
                 firstName: "Test",
@@ -151,14 +172,22 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
                 items: [
                     SezzleItem(
                         name: product.name,
-                        sku: "demo-\(sender.tag)",
+                        sku: "demo-\(index)",
                         quantity: 1,
                         price: SezzleAmount(amountInCents: product.priceInCents, currency: "USD")
                     )
                 ]
             )
         )
+    }
 
+    @objc private func startCheckoutBrowser(_ sender: UIButton) {
+        let checkout = buildCheckout(for: sender.tag)
+        SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .systemBrowser)
+    }
+
+    @objc private func startCheckoutWebView(_ sender: UIButton) {
+        let checkout = buildCheckout(for: sender.tag)
         SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
     }
 

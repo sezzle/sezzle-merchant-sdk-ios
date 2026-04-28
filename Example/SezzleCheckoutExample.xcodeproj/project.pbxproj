@@ -11,6 +11,7 @@
 		4F4E9202FBC35607B3C6C152 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E351981616068F58A5BAEFB /* SceneDelegate.swift */; };
 		663B13E84C0C4AFB3505A1D3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303C7D1D97720C5008659BD /* AppDelegate.swift */; };
 		78829105EC10CCF687918063 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 341D197E5AAEF48B56EAA58E /* README.md */; };
+		8DCEFB7012E7FA907AEC62F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D9082F366F2DE177F0E4391 /* Assets.xcassets */; };
 		E39AE8F321C97B0B3C20578F /* SezzleMerchantSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C939710E3414499FF7DA5614 /* SezzleMerchantSDK */; };
 		EC450FC4D11849CE5BE7E851 /* Secrets.swift.template in Resources */ = {isa = PBXBuildFile; fileRef = 4A0642C8982B78496E63D006 /* Secrets.swift.template */; };
 		F514F4F8341CD6A9CC67E2A0 /* ProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */; };
@@ -19,14 +20,15 @@
 
 /* Begin PBXFileReference section */
 		341D197E5AAEF48B56EAA58E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		4A0642C8982B78496E63D006 /* Secrets.swift.template */ = {isa = PBXFileReference; path = Secrets.swift.template; sourceTree = "<group>"; };
+		4A0642C8982B78496E63D006 /* Secrets.swift.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = Secrets.swift.template; sourceTree = "<group>"; };
+		4D9082F366F2DE177F0E4391 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4E351981616068F58A5BAEFB /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		5303C7D1D97720C5008659BD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5E483E48C1EAA9568B399F04 /* sezzle-merchant-sdk-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sezzle-merchant-sdk-ios"; path = ..; sourceTree = SOURCE_ROOT; };
 		966B1375BF053959559B2976 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9AC4A8ECEE84EF1495BAC750 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		9D2139BE8C905F22656A55A7 /* ResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultViewController.swift; sourceTree = "<group>"; };
-		A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SezzleCheckoutExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1FF9DD90749186A7B9261F4 /* SezzleCheckoutExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SezzleCheckoutExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFCC6C3C989A4B42D61D5C77 /* ProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -80,6 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				5303C7D1D97720C5008659BD /* AppDelegate.swift */,
+				4D9082F366F2DE177F0E4391 /* Assets.xcassets */,
 				966B1375BF053959559B2976 /* Info.plist */,
 				341D197E5AAEF48B56EAA58E /* README.md */,
 				4E351981616068F58A5BAEFB /* SceneDelegate.swift */,
@@ -122,6 +125,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					AF1A5AD4594B19FB5B9C980A = {
+						DevelopmentTeam = 3FQLS4W4NS;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 298018A978131A6B14EA765A /* Build configuration list for PBXProject "SezzleCheckoutExample" */;
@@ -151,6 +158,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8DCEFB7012E7FA907AEC62F4 /* Assets.xcassets in Resources */,
 				78829105EC10CCF687918063 /* README.md in Resources */,
 				EC450FC4D11849CE5BE7E851 /* Secrets.swift.template in Resources */,
 			);
@@ -207,8 +215,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3FQLS4W4NS;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -227,6 +237,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -263,8 +274,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3FQLS4W4NS;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -290,6 +303,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -305,7 +319,11 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sezzle.example.SezzleCheckoutExample;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -321,7 +339,11 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sezzle.example.SezzleCheckoutExample;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

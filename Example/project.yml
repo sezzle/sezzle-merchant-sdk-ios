@@ -6,6 +6,9 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 3FQLS4W4NS
+    TARGETED_DEVICE_FAMILY: "1"
 packages:
   SezzleMerchantSDK:
     path: ../
@@ -19,3 +22,7 @@ targets:
       - package: SezzleMerchantSDK
     info:
       path: SezzleCheckoutExample/Info.plist
+      properties:
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UILaunchScreen: {}
