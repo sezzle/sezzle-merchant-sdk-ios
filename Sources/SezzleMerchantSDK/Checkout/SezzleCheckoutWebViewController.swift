@@ -47,13 +47,6 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         separator.translatesAutoresizingMaskIntoConstraints = false
         header.addSubview(separator)
 
-        let titleLabel = UILabel()
-        titleLabel.text = "sezzle.com"
-        titleLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = .secondaryLabel
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        header.addSubview(titleLabel)
-
         let closeButton = UIButton(type: .system)
         closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
         closeButton.tintColor = .label
@@ -66,9 +59,6 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
             header.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             header.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             header.heightAnchor.constraint(equalToConstant: 44),
-
-            titleLabel.centerXAnchor.constraint(equalTo: header.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: header.centerYAnchor),
 
             closeButton.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -16),
             closeButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
