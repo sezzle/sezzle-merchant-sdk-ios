@@ -18,7 +18,6 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         queryItems.append(URLQueryItem(name: "isWebView", value: "true"))
         components?.queryItems = queryItems
         self.checkoutURL = components?.url ?? checkoutURL
-
         self.orderUUID = orderUUID
         self.checkoutDelegate = delegate
         super.init(nibName: nil, bundle: nil)
@@ -32,7 +31,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupWebView()
-        setupHeader()  // Header added after webView so it's on top for touches
+        setupHeader()
         setupLoadingIndicator()
         webView.load(URLRequest(url: checkoutURL))
     }
