@@ -7,14 +7,26 @@ enum SezzleBrand {
     /// Primary purple — installment amounts, active elements.
     static let purple = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1) // #8333D4
 
-    /// Dark purple — headings, body text.
-    static let darkPurple = UIColor(red: 0x39/255, green: 0x25/255, blue: 0x58/255, alpha: 1) // #392558
+    /// Dark purple — headings, body text. Adapts to dark mode.
+    static let darkPurple = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 0xE0/255, green: 0xD0/255, blue: 0xF0/255, alpha: 1)
+            : UIColor(red: 0x39/255, green: 0x25/255, blue: 0x58/255, alpha: 1)
+    }
 
-    /// Gray — due dates, secondary text.
-    static let gray = UIColor(red: 0x5E/255, green: 0x5E/255, blue: 0x5E/255, alpha: 1) // #5E5E5E
+    /// Gray — due dates, secondary text. Adapts to dark mode.
+    static let gray = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 0xA0/255, green: 0xA0/255, blue: 0xA0/255, alpha: 1)
+            : UIColor(red: 0x5E/255, green: 0x5E/255, blue: 0x5E/255, alpha: 1)
+    }
 
-    /// Light purple background for cards.
-    static let lightPurpleBg = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.05)
+    /// Light purple background for cards. Adapts to dark mode.
+    static let lightPurpleBg = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.15)
+            : UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 0.05)
+    }
 
     /// Green for first payment / "today" indicator.
     static let green = UIColor(red: 0x00/255, green: 0xB8/255, blue: 0x74/255, alpha: 1) // #00B874

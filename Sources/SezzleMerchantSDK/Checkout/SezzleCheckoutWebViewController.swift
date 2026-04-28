@@ -55,6 +55,13 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         header.addSubview(titleLabel)
 
+        let backButton = UIButton(type: .system)
+        backButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        backButton.tintColor = .label
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        header.addSubview(backButton)
+
         let closeButton = UIButton(type: .system)
         closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
         closeButton.tintColor = .label
@@ -71,7 +78,12 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
             titleLabel.centerXAnchor.constraint(equalTo: header.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: header.centerYAnchor),
 
-            closeButton.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+            backButton.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+            backButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: 30),
+            backButton.heightAnchor.constraint(equalToConstant: 30),
+
+            closeButton.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -16),
             closeButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
             closeButton.widthAnchor.constraint(equalToConstant: 30),
             closeButton.heightAnchor.constraint(equalToConstant: 30),
@@ -128,6 +140,12 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         ])
 
         activityIndicator.startAnimating()
+    }
+
+    @objc private func backTapped() {
+        if webView.canGoBack {
+            webView.goBack()
+        }
     }
 
     @objc private func closeTapped() {

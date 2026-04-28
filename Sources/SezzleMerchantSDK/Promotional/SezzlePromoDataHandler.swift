@@ -61,7 +61,7 @@ public enum SezzlePromoDataHandler {
 
         let baseAttrs: [NSAttributedString.Key: Any] = [
             .font: style.font,
-            .foregroundColor: SezzleBrand.darkPurple
+            .foregroundColor: style.textColor
         ]
 
         switch widgetType {
