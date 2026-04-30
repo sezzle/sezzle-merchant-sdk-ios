@@ -5,6 +5,27 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-30
+
+### Added
+- Full POST /v2/session API support — all fields from the Sezzle API are now available:
+  - `SezzleAddress` — billing and shipping addresses on `SezzleCustomer`
+  - `SezzleDiscount` — order discount line items
+  - `SezzleLocale` — checkout locale (`enUS`, `enCA`, `frCA`)
+  - `SezzleFinancingOption` — restrict to specific financing plans
+  - `SezzleItem` gains `brand`, `imageUrl`, `productUrl`, `globalTradeItemNumber`, `manufacturerPartNumber`, `categoryPath`
+  - `SezzleCustomer` gains `dob`, `billingAddress`, `shippingAddress`, `tokenize`, `recurring`, `recurringMetadata`
+  - `SezzleOrder` gains `discounts`, `taxAmount`, `shippingAmount`, `metadata`, `requiresShippingInfo`, `locale`, `checkoutFinancingOptions`
+- SDK event logging — fire-and-forget telemetry to Sezzle's event pipeline (`/sdk-event-logging`)
+  - Events: `popup_created`, `loaded`, `success`, `cancel`, `failure`
+  - Includes SDK version, platform, device model, OS version in user agent
+  - Enables checkout funnel analytics and SDK attribution
+- SDK metadata in order — `_sdk_platform`, `_sdk_version`, `_device_model`, `_os_version` automatically included in `order.metadata` for attribution tracking
+
+### Changed
+- `isWebView=true` now appended to checkout URL for both system browser and WebView modes (moved from WebView controller to CheckoutHandler)
+- SDK version bumped to 1.1.0
+
 ## [1.0.5] - 2026-04-28
 
 ### Added

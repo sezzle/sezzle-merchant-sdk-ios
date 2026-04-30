@@ -75,7 +75,8 @@ public final class SezzleSDK {
 
         let httpClient = HTTPClient(publicKey: publicKey, environment: environment)
         let sessionService = SessionService(httpClient: httpClient)
-        let handler = CheckoutHandler(sessionService: sessionService)
+        let eventLogger = SezzleEventLogger(publicKey: publicKey, environment: environment)
+        let handler = CheckoutHandler(sessionService: sessionService, eventLogger: eventLogger)
         self.checkoutHandler = handler
         handler.startCheckout(checkout, from: viewController, delegate: delegate, mode: mode)
     }

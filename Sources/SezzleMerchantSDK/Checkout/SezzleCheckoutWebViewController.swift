@@ -12,12 +12,8 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     private var activityIndicator: UIActivityIndicatorView!
 
     init(checkoutURL: URL, orderUUID: String, delegate: any SezzleCheckoutDelegate) {
-        // Append isWebView=true so sezzle-checkout hides its own header
-        var components = URLComponents(url: checkoutURL, resolvingAgainstBaseURL: false)
-        var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "isWebView", value: "true"))
-        components?.queryItems = queryItems
-        self.checkoutURL = components?.url ?? checkoutURL
+        // isWebView=true is already appended by CheckoutHandler
+        self.checkoutURL = checkoutURL
         self.orderUUID = orderUUID
         self.checkoutDelegate = delegate
         super.init(nibName: nil, bundle: nil)
