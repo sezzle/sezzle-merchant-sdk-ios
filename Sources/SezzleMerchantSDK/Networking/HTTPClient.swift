@@ -7,7 +7,7 @@ struct HTTPClient: Sendable {
     let publicKey: String
     let environment: SezzleEnvironment
     let session: URLSession
-    internal static let sdkVersion = "1.1.0"
+    internal static let sdkVersion = "1.2.0"
 
     init(publicKey: String, environment: SezzleEnvironment, session: URLSession = .shared) {
         self.publicKey = publicKey

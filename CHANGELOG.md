@@ -5,6 +5,18 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-06
+
+### Added
+- Server-driven checkout entrypoint — `SezzleSDK.shared.startCheckout(checkoutURL:completeURL:cancelURL:from:delegate:mode:)` for merchants whose backend creates the session via `POST /v2/session` directly. No public key on-device, no `configure(publicKey:)` required. Merchants supply their own callback URLs (any scheme) and the SDK intercepts navigation to them.
+- `SezzleCheckoutResult` — unified result struct exposing `orderUUID` (SDK-creates-session flow) or `callbackURL` (server-driven flow). The full callback URL is delivered so merchants can encode their own state in query params (e.g. `yourapp-sezzle://done?orderRef=12345`) and recover it on completion.
+
+### Changed
+- `SezzleCheckoutDelegate.checkoutDidComplete` now receives a `SezzleCheckoutResult` instead of a bare `orderUUID` string, unifying both flows behind a single delegate method.
+- `CheckoutHandler` URL match logic is now dynamic — compares scheme + host + path against the merchant's callback URLs (case-insensitive on scheme/host). Existing flow continues to use the hardcoded `sezzle-sdk://checkout/(confirmed|cancelled)` URLs.
+- `WKURLSchemeHandler` registration is now per-checkout (registered for the merchant's callback scheme) and skipped for `http`/`https`.
+- `SezzleEventLogger` no-ops gracefully on the server-driven flow (no public key = no events).
+
 ## [1.1.0] - 2026-04-30
 
 ### Added

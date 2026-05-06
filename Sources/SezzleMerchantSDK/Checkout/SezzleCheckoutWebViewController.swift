@@ -5,16 +5,23 @@ import WebKit
 @MainActor
 final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDelegate {
     private let checkoutURL: URL
-    private let orderUUID: String
+    private let completeURL: URL
+    private let cancelURL: URL
     private weak var checkoutDelegate: (any SezzleCheckoutDelegate)?
     private var resultDelivered = false
     private var webView: WKWebView!
     private var activityIndicator: UIActivityIndicatorView!
 
-    init(checkoutURL: URL, orderUUID: String, delegate: any SezzleCheckoutDelegate) {
+    init(
+        checkoutURL: URL,
+        completeURL: URL,
+        cancelURL: URL,
+        delegate: any SezzleCheckoutDelegate
+    ) {
         // isWebView=true is already appended by CheckoutHandler
         self.checkoutURL = checkoutURL
-        self.orderUUID = orderUUID
+        self.completeURL = completeURL
+        self.cancelURL = cancelURL
         self.checkoutDelegate = delegate
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .fullScreen
@@ -74,19 +81,25 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
 
-        // Register our custom scheme so WKWebView recognizes it
-        config.setURLSchemeHandler(SezzleSchemeHandler(), forURLScheme: CheckoutHandler.callbackScheme)
+        // Register a scheme handler for the merchant's callback scheme so WKWebView
+        // doesn't fail silently when navigating to it. Only register for non-http schemes;
+        // http/https schemes are handled by the navigation delegate directly.
+        if let scheme = completeURL.scheme?.lowercased(),
+           scheme != "http", scheme != "https" {
+            config.setURLSchemeHandler(SezzleSchemeHandler(), forURLScheme: scheme)
+        }
 
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
 
-        // KVO fallback — observe URL changes to catch any redirect method
+        // KVO fallback — observe URL changes to catch any redirect method.
+        // Hop to MainActor before reading instance state.
         urlObservation = webView.observe(\.url, options: [.new]) { [weak self] _, change in
-            guard let self, let url = change.newValue as? URL,
-                  url.scheme == CheckoutHandler.callbackScheme else { return }
-            Task { @MainActor in
+            guard let url = change.newValue as? URL else { return }
+            Task { @MainActor [weak self] in
+                guard let self, self.isCallback(url) else { return }
                 self.handleCallback(url)
                 self.dismiss(animated: true)
             }
@@ -127,8 +140,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
     ) {
-        guard let url = navigationAction.request.url,
-              url.scheme == CheckoutHandler.callbackScheme else {
+        guard let url = navigationAction.request.url, isCallback(url) else {
             decisionHandler(.allow)
             return
         }
@@ -143,8 +155,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         decidePolicyFor navigationResponse: WKNavigationResponse,
         decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void
     ) {
-        if let url = navigationResponse.response.url,
-           url.scheme == CheckoutHandler.callbackScheme {
+        if let url = navigationResponse.response.url, isCallback(url) {
             decisionHandler(.cancel)
             handleCallback(url)
             dismiss(animated: true)
@@ -156,7 +167,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         activityIndicator.stopAnimating()
 
-        if let url = webView.url, url.scheme == CheckoutHandler.callbackScheme {
+        if let url = webView.url, isCallback(url) {
             handleCallback(url)
             dismiss(animated: true)
         }
@@ -167,7 +178,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         activityIndicator.stopAnimating()
 
         if let failingURL = nsError.userInfo["NSErrorFailingURLKey"] as? URL,
-           failingURL.scheme == CheckoutHandler.callbackScheme {
+           isCallback(failingURL) {
             handleCallback(failingURL)
             dismiss(animated: true)
             return
@@ -182,7 +193,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
 
         if let failingURL = nsError.userInfo["NSErrorFailingURLKey"] as? URL
             ?? (nsError.userInfo["NSErrorFailingURLStringKey"] as? String).flatMap(URL.init),
-           failingURL.scheme == CheckoutHandler.callbackScheme {
+           isCallback(failingURL) {
             handleCallback(failingURL)
             dismiss(animated: true)
             return
@@ -197,19 +208,20 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
 
     // MARK: - Callback handling
 
+    private func isCallback(_ url: URL) -> Bool {
+        CheckoutHandler.matches(url, target: completeURL)
+            || CheckoutHandler.matches(url, target: cancelURL)
+    }
+
     private func handleCallback(_ url: URL) {
-        let host = url.host ?? url.path
-        switch host {
-        case "checkout":
-            let action = url.pathComponents.last
-            if action == "confirmed" {
-                deliverResult { $0.checkoutDidComplete(orderUUID: orderUUID) }
-            } else if action == "cancelled" {
-                deliverResult { $0.checkoutDidCancel() }
-            } else {
-                deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
-            }
-        default:
+        if CheckoutHandler.matches(url, target: completeURL) {
+            // The wrapping CheckoutHandler will fill in orderUUID for the SDK-creates-session flow
+            // (callbackURL stays nil there) or callbackURL for the server-driven flow.
+            let result = SezzleCheckoutResult(orderUUID: nil, callbackURL: url)
+            deliverResult { $0.checkoutDidComplete(result: result) }
+        } else if CheckoutHandler.matches(url, target: cancelURL) {
+            deliverResult { $0.checkoutDidCancel() }
+        } else {
             deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
         }
     }
@@ -222,14 +234,11 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     }
 }
 
-/// Handles sezzle-sdk:// scheme requests in WKWebView.
-/// When the checkout page navigates to sezzle-sdk://checkout/confirmed,
-/// WKWebView calls this handler instead of failing silently.
+/// Handles custom-scheme requests in WKWebView so they don't fail silently.
+/// The actual interception happens in the navigation delegate / KVO observer.
 final class SezzleSchemeHandler: NSObject, WKURLSchemeHandler {
     func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
-        // We don't actually need to respond — the navigation delegate
-        // or KVO observer will handle the URL. Just complete the task.
-        let url = urlSchemeTask.request.url ?? URL(string: "sezzle-sdk://unknown")!
+        let url = urlSchemeTask.request.url ?? URL(string: "about:blank")!
         let response = URLResponse(url: url, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
         urlSchemeTask.didReceive(response)
         urlSchemeTask.didFinish()

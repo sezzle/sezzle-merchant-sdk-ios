@@ -2,27 +2,15 @@ import UIKit
 
 /// The main entry point for the Sezzle Merchant SDK.
 ///
-/// Configure the SDK once at app startup, then start checkouts from anywhere in your app.
+/// Two checkout flows are supported:
 ///
-/// ## Quick Start
+/// **SDK-creates-session flow** — call ``configure(publicKey:environment:)`` once at app
+/// startup, then call ``startCheckout(_:from:delegate:mode:)`` with a ``SezzleCheckout``
+/// payload. The SDK creates the session via Sezzle's API and presents checkout.
 ///
-/// ```swift
-/// // 1. Configure in AppDelegate
-/// SezzleSDK.shared.configure(
-///     publicKey: "sz_pub_...",
-///     environment: .sandbox
-/// )
-///
-/// // 2. Start checkout
-/// let checkout = SezzleCheckout(
-///     customer: SezzleCustomer(email: "jane@example.com"),
-///     order: SezzleOrder(
-///         referenceId: "order-123",
-///         amount: SezzleAmount(amountInCents: 4999, currency: "USD")
-///     )
-/// )
-/// SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self)
-/// ```
+/// **Server-driven flow** — your backend creates the session via `POST /v2/session`
+/// directly, then call ``startCheckout(checkoutURL:completeURL:cancelURL:from:delegate:mode:)``
+/// with the response data. No public key on-device, no `configure(publicKey:)` required.
 @MainActor
 public final class SezzleSDK {
     /// The shared SDK instance.
@@ -36,8 +24,9 @@ public final class SezzleSDK {
 
     /// Configure the SDK with your Sezzle public key.
     ///
-    /// Call this once at app startup (e.g., in `AppDelegate.didFinishLaunchingWithOptions`
-    /// or your SwiftUI `App.init`), before making any other SDK calls.
+    /// Required only for the SDK-creates-session flow. The server-driven entrypoint
+    /// (``startCheckout(checkoutURL:completeURL:cancelURL:from:delegate:mode:)``) works
+    /// without ever calling `configure`.
     ///
     /// - Parameters:
     ///   - publicKey: Your Sezzle public key (starts with `sz_pub_...`).
@@ -48,10 +37,9 @@ public final class SezzleSDK {
         self.environment = environment
     }
 
-    /// Start a Sezzle checkout.
+    /// Start a Sezzle checkout — SDK creates the session.
     ///
-    /// Opens the Sezzle checkout in a browser. When the user completes,
-    /// cancels, or encounters an error, the appropriate delegate method is called.
+    /// Requires ``configure(publicKey:environment:)`` to have been called.
     ///
     /// - Parameters:
     ///   - checkout: The customer and order data for this checkout.
@@ -59,9 +47,9 @@ public final class SezzleSDK {
     ///   - delegate: Receives checkout completion, cancellation, or error callbacks.
     ///   - mode: How the checkout is presented. Defaults to `.systemBrowser`.
     ///
-    /// The delegate's ``SezzleCheckoutDelegate/checkoutDidComplete(orderUUID:)`` returns
-    /// the Sezzle order UUID. Send this to your backend to capture the payment via
-    /// `POST /v2/order/{uuid}/capture`.
+    /// On success, ``SezzleCheckoutDelegate/checkoutDidComplete(result:)`` is called with
+    /// `result.orderUUID` populated. Send that UUID to your backend to capture the payment
+    /// via `POST /v2/order/{uuid}/capture`.
     public func startCheckout(
         _ checkout: SezzleCheckout,
         from viewController: UIViewController,
@@ -81,8 +69,91 @@ public final class SezzleSDK {
         handler.startCheckout(checkout, from: viewController, delegate: delegate, mode: mode)
     }
 
+    /// Start a Sezzle checkout — your backend already created the session.
+    ///
+    /// Use this when your server creates the Sezzle session via `POST /v2/session` directly
+    /// (e.g. to keep your private key off-device). Pass the `order.checkout_url` from the
+    /// session response, plus the same `complete_url.href` and `cancel_url.href` your server
+    /// supplied in the request — the SDK intercepts navigation to those URLs and dispatches
+    /// the corresponding delegate method.
+    ///
+    /// Does NOT require ``configure(publicKey:environment:)`` to have been called.
+    ///
+    /// On success, ``SezzleCheckoutDelegate/checkoutDidComplete(result:)`` is called with
+    /// `result.callbackURL` populated — read query parameters there to recover any state
+    /// you encoded in your `complete_url`. `result.orderUUID` is `nil` because your backend
+    /// already has it from the session-creation response.
+    ///
+    /// - Important: For `.systemBrowser` mode, `completeURL` and `cancelURL` must use a
+    ///   **custom URL scheme** (not `http`/`https`) — `ASWebAuthenticationSession` requires it.
+    ///   `.webView` mode supports any scheme.
+    ///
+    /// - Important: On Android, merchants using `.systemBrowser` mode with a custom callback
+    ///   scheme must register an intent-filter for that scheme in their own `AndroidManifest.xml`.
+    ///   This iOS API has no equivalent platform requirement.
+    ///
+    /// - Parameters:
+    ///   - checkoutURL: The `order.checkout_url` from your `POST /v2/session` response.
+    ///   - completeURL: The same URL you passed as `complete_url.href` in the session request.
+    ///   - cancelURL: The same URL you passed as `cancel_url.href` in the session request.
+    ///   - viewController: The view controller to present the checkout from.
+    ///   - delegate: Receives checkout completion, cancellation, or error callbacks.
+    ///   - mode: How the checkout is presented. Defaults to `.systemBrowser`.
+    public func startCheckout(
+        checkoutURL: URL,
+        completeURL: URL,
+        cancelURL: URL,
+        from viewController: UIViewController,
+        delegate: any SezzleCheckoutDelegate,
+        mode: SezzleCheckoutMode = .systemBrowser
+    ) {
+        #if DEBUG
+        validate(
+            checkoutURL: checkoutURL,
+            completeURL: completeURL,
+            cancelURL: cancelURL,
+            mode: mode
+        )
+        #endif
+
+        let handler = CheckoutHandler(sessionService: nil, eventLogger: nil)
+        self.checkoutHandler = handler
+        handler.startCheckout(
+            checkoutURL: checkoutURL,
+            completeURL: completeURL,
+            cancelURL: cancelURL,
+            from: viewController,
+            delegate: delegate,
+            mode: mode
+        )
+    }
+
     /// Whether the SDK has been configured.
+    ///
+    /// Required for the SDK-creates-session flow. Not required for the server-driven flow.
     public var isConfigured: Bool {
         publicKey != nil && environment != nil
     }
+
+    #if DEBUG
+    private func validate(
+        checkoutURL: URL,
+        completeURL: URL,
+        cancelURL: URL,
+        mode: SezzleCheckoutMode
+    ) {
+        if let host = checkoutURL.host?.lowercased(),
+           !host.hasSuffix("sezzle.com") {
+            print("⚠️ [SezzleSDK] checkoutURL host '\(host)' is not a sezzle.com domain. Are you sure this is right?")
+        }
+        if mode == .systemBrowser {
+            for (label, url) in [("completeURL", completeURL), ("cancelURL", cancelURL)] {
+                if let scheme = url.scheme?.lowercased(),
+                   scheme == "http" || scheme == "https" {
+                    print("⚠️ [SezzleSDK] \(label) uses '\(scheme)' which won't work with .systemBrowser mode (ASWebAuthenticationSession requires a custom scheme). Use .webView mode or a custom scheme.")
+                }
+            }
+        }
+    }
+    #endif
 }

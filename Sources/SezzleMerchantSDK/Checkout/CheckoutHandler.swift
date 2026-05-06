@@ -1,10 +1,10 @@
 import AuthenticationServices
 import UIKit
 
-/// Orchestrates the checkout flow: create session → open browser → handle callback.
+/// Orchestrates the checkout flow: optionally create session → open browser → handle callback.
 @MainActor
 final class CheckoutHandler: NSObject {
-    private let sessionService: any SessionServiceProtocol
+    private let sessionService: (any SessionServiceProtocol)?
     private let eventLogger: SezzleEventLogger?
     private weak var delegate: (any SezzleCheckoutDelegate)?
     private var authSession: ASWebAuthenticationSession?
@@ -15,12 +15,21 @@ final class CheckoutHandler: NSObject {
     private var checkoutMode: String = ""
     private var resultDelivered = false
 
-    nonisolated static let callbackScheme = "sezzle-sdk"
+    // Per-checkout callback URLs. For the SDK-creates-session flow, these default to
+    // the hardcoded sezzle-sdk:// URLs. For the server-driven flow, the merchant supplies them.
+    private var completeURL: URL = CheckoutHandler.defaultCompleteURL
+    private var cancelURL: URL = CheckoutHandler.defaultCancelURL
 
-    init(sessionService: any SessionServiceProtocol, eventLogger: SezzleEventLogger? = nil) {
+    nonisolated static let callbackScheme = "sezzle-sdk"
+    nonisolated static let defaultCompleteURL = URL(string: "sezzle-sdk://checkout/confirmed")!
+    nonisolated static let defaultCancelURL = URL(string: "sezzle-sdk://checkout/cancelled")!
+
+    init(sessionService: (any SessionServiceProtocol)?, eventLogger: SezzleEventLogger? = nil) {
         self.sessionService = sessionService
         self.eventLogger = eventLogger
     }
+
+    // MARK: - SDK-creates-session flow
 
     func startCheckout(
         _ checkout: SezzleCheckout,
@@ -28,6 +37,11 @@ final class CheckoutHandler: NSObject {
         delegate: any SezzleCheckoutDelegate,
         mode: SezzleCheckoutMode
     ) {
+        guard let sessionService else {
+            delegate.checkoutDidFail(error: .notConfigured)
+            return
+        }
+
         self.delegate = delegate
         self.checkoutMode = mode == .webView ? "webview" : "system_browser"
 
@@ -48,32 +62,18 @@ final class CheckoutHandler: NSObject {
                     mode: checkoutMode
                 )
 
-                guard var checkoutURL = URLComponents(string: response.order.checkoutURL) else {
+                guard let finalURL = appendIsWebViewParam(to: response.order.checkoutURL) else {
                     delegate.checkoutDidFail(error: .invalidResponse)
                     return
                 }
 
-                // Append isWebView=true for all modes
-                var queryItems = checkoutURL.queryItems ?? []
-                queryItems.append(URLQueryItem(name: "isWebView", value: "true"))
-                checkoutURL.queryItems = queryItems
-
-                guard let finalURL = checkoutURL.url else {
-                    delegate.checkoutDidFail(error: .invalidResponse)
-                    return
-                }
-
-                switch mode {
-                case .systemBrowser:
-                    openBrowser(url: finalURL, from: viewController)
-                case .webView:
-                    let webVC = SezzleCheckoutWebViewController(
-                        checkoutURL: finalURL,
-                        orderUUID: response.order.uuid,
-                        delegate: self
-                    )
-                    viewController.present(webVC, animated: true)
-                }
+                presentCheckout(
+                    url: finalURL,
+                    completeURL: Self.defaultCompleteURL,
+                    cancelURL: Self.defaultCancelURL,
+                    from: viewController,
+                    mode: mode
+                )
             } catch let error as SezzleError {
                 delegate.checkoutDidFail(error: error)
             } catch {
@@ -82,10 +82,66 @@ final class CheckoutHandler: NSObject {
         }
     }
 
+    // MARK: - Server-driven (pass-URL) flow
+
+    func startCheckout(
+        checkoutURL: URL,
+        completeURL: URL,
+        cancelURL: URL,
+        from viewController: UIViewController,
+        delegate: any SezzleCheckoutDelegate,
+        mode: SezzleCheckoutMode
+    ) {
+        self.delegate = delegate
+        self.checkoutMode = mode == .webView ? "webview" : "system_browser"
+        // orderUUID stays nil — the merchant has it server-side, we don't.
+
+        let finalURL = appendIsWebViewParam(to: checkoutURL.absoluteString) ?? checkoutURL
+
+        presentCheckout(
+            url: finalURL,
+            completeURL: completeURL,
+            cancelURL: cancelURL,
+            from: viewController,
+            mode: mode
+        )
+    }
+
+    // MARK: - Shared presentation
+
+    private func presentCheckout(
+        url: URL,
+        completeURL: URL,
+        cancelURL: URL,
+        from viewController: UIViewController,
+        mode: SezzleCheckoutMode
+    ) {
+        self.completeURL = completeURL
+        self.cancelURL = cancelURL
+
+        switch mode {
+        case .systemBrowser:
+            openBrowser(url: url, from: viewController)
+        case .webView:
+            let webVC = SezzleCheckoutWebViewController(
+                checkoutURL: url,
+                completeURL: completeURL,
+                cancelURL: cancelURL,
+                delegate: self
+            )
+            viewController.present(webVC, animated: true)
+        }
+    }
+
     private func openBrowser(url: URL, from viewController: UIViewController) {
+        // ASWebAuthenticationSession's callbackURLScheme must be a custom scheme
+        // (not http/https). For the existing flow this is always "sezzle-sdk".
+        // For the server-driven flow it's whatever scheme the merchant chose for completeURL.
+        let callbackURLScheme = completeURL.scheme ?? Self.callbackScheme
+
         let session = ASWebAuthenticationSession(
             url: url,
-            callbackURLScheme: Self.callbackScheme
+            callbackURLScheme: callbackURLScheme
         ) { [weak self] callbackURL, error in
             guard let self, !self.resultDelivered else { return }
 
@@ -124,23 +180,38 @@ final class CheckoutHandler: NSObject {
     }
 
     private func handleCallback(_ url: URL) {
-        let path = url.host ?? url.path
-
-        switch path {
-        case "checkout":
-            let action = url.pathComponents.last
-            if action == "confirmed", let orderUUID {
-                eventLogger?.log(event: .success, sessionUUID: sessionUUID ?? "", orderUUID: orderUUID, checkoutUUID: checkoutUUID ?? "", mode: checkoutMode)
-                deliverResult { $0.checkoutDidComplete(orderUUID: orderUUID) }
-            } else if action == "cancelled" {
-                eventLogger?.log(event: .cancel, sessionUUID: sessionUUID ?? "", orderUUID: orderUUID ?? "", checkoutUUID: checkoutUUID ?? "", mode: checkoutMode)
-                deliverResult { $0.checkoutDidCancel() }
-            } else {
-                deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
-            }
-        default:
+        if Self.matches(url, target: completeURL) {
+            eventLogger?.log(
+                event: .success,
+                sessionUUID: sessionUUID ?? "",
+                orderUUID: orderUUID ?? "",
+                checkoutUUID: checkoutUUID ?? "",
+                mode: checkoutMode
+            )
+            let result = SezzleCheckoutResult(
+                orderUUID: orderUUID,
+                callbackURL: orderUUID == nil ? url : nil
+            )
+            deliverResult { $0.checkoutDidComplete(result: result) }
+        } else if Self.matches(url, target: cancelURL) {
+            eventLogger?.log(
+                event: .cancel,
+                sessionUUID: sessionUUID ?? "",
+                orderUUID: orderUUID ?? "",
+                checkoutUUID: checkoutUUID ?? "",
+                mode: checkoutMode
+            )
+            deliverResult { $0.checkoutDidCancel() }
+        } else {
             deliverResult { $0.checkoutDidFail(error: .invalidResponse) }
         }
+    }
+
+    /// Matches if `url` shares scheme + host + path with `target`. Query/fragment may differ.
+    nonisolated static func matches(_ url: URL, target: URL) -> Bool {
+        url.scheme?.lowercased() == target.scheme?.lowercased()
+            && url.host?.lowercased() == target.host?.lowercased()
+            && url.path == target.path
     }
 
     private func extractCheckoutUUID(from urlString: String) -> String? {
@@ -149,6 +220,16 @@ final class CheckoutHandler: NSObject {
             return nil
         }
         return idParam
+    }
+
+    private func appendIsWebViewParam(to urlString: String) -> URL? {
+        guard var components = URLComponents(string: urlString) else { return nil }
+        var queryItems = components.queryItems ?? []
+        if !queryItems.contains(where: { $0.name == "isWebView" }) {
+            queryItems.append(URLQueryItem(name: "isWebView", value: "true"))
+        }
+        components.queryItems = queryItems
+        return components.url
     }
 
     private func cleanup() {
@@ -162,19 +243,50 @@ final class CheckoutHandler: NSObject {
 }
 
 // MARK: - SezzleCheckoutDelegate conformance for WebView wrapper
+//
+// The WebViewController fires `checkoutDidComplete(result:)` with `callbackURL` set
+// (since it doesn't know about session UUIDs). This wrapper rewrites the result
+// to match the calling flow:
+//   - SDK-creates-session flow → result with orderUUID, callbackURL nil
+//   - Server-driven flow       → pass through with callbackURL
 extension CheckoutHandler: SezzleCheckoutDelegate {
-    func checkoutDidComplete(orderUUID: String) {
-        eventLogger?.log(event: .success, sessionUUID: sessionUUID ?? "", orderUUID: orderUUID, checkoutUUID: checkoutUUID ?? "", mode: checkoutMode)
-        deliverResult { $0.checkoutDidComplete(orderUUID: orderUUID) }
+    func checkoutDidComplete(result: SezzleCheckoutResult) {
+        let finalResult: SezzleCheckoutResult
+        if let orderUUID {
+            finalResult = SezzleCheckoutResult(orderUUID: orderUUID, callbackURL: nil)
+        } else {
+            finalResult = result
+        }
+        eventLogger?.log(
+            event: .success,
+            sessionUUID: sessionUUID ?? "",
+            orderUUID: finalResult.orderUUID ?? "",
+            checkoutUUID: checkoutUUID ?? "",
+            mode: checkoutMode
+        )
+        deliverResult { $0.checkoutDidComplete(result: finalResult) }
     }
 
     func checkoutDidCancel() {
-        eventLogger?.log(event: .cancel, sessionUUID: sessionUUID ?? "", orderUUID: orderUUID ?? "", checkoutUUID: checkoutUUID ?? "", mode: checkoutMode)
+        eventLogger?.log(
+            event: .cancel,
+            sessionUUID: sessionUUID ?? "",
+            orderUUID: orderUUID ?? "",
+            checkoutUUID: checkoutUUID ?? "",
+            mode: checkoutMode
+        )
         deliverResult { $0.checkoutDidCancel() }
     }
 
     func checkoutDidFail(error: SezzleError) {
-        eventLogger?.log(event: .failure, sessionUUID: sessionUUID ?? "", orderUUID: orderUUID ?? "", checkoutUUID: checkoutUUID ?? "", mode: checkoutMode, message: error.localizedDescription)
+        eventLogger?.log(
+            event: .failure,
+            sessionUUID: sessionUUID ?? "",
+            orderUUID: orderUUID ?? "",
+            checkoutUUID: checkoutUUID ?? "",
+            mode: checkoutMode,
+            message: error.localizedDescription
+        )
         deliverResult { $0.checkoutDidFail(error: error) }
     }
 }

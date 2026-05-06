@@ -2,12 +2,16 @@ import Foundation
 
 /// Receives callbacks when a Sezzle checkout completes, is cancelled, or fails.
 ///
-/// Implement this protocol to handle the result of ``SezzleSDK/startCheckout(_:from:delegate:)``.
+/// Implement this protocol to handle the result of either checkout entrypoint.
 ///
 /// ```swift
 /// extension MyViewController: SezzleCheckoutDelegate {
-///     func checkoutDidComplete(orderUUID: String) {
-///         // Send orderUUID to your backend for capture
+///     func checkoutDidComplete(result: SezzleCheckoutResult) {
+///         if let orderUUID = result.orderUUID {
+///             // SDK-creates-session flow — capture via your backend
+///         } else if let callbackURL = result.callbackURL {
+///             // Server-driven flow — read query params you encoded
+///         }
 ///     }
 ///     func checkoutDidCancel() {
 ///         // User cancelled — return to cart
@@ -21,8 +25,8 @@ import Foundation
 public protocol SezzleCheckoutDelegate: AnyObject {
     /// Called when the user successfully completes checkout.
     ///
-    /// - Parameter orderUUID: The Sezzle order UUID. Send this to your backend to capture the payment.
-    func checkoutDidComplete(orderUUID: String)
+    /// - Parameter result: See ``SezzleCheckoutResult`` for which fields are populated by which flow.
+    func checkoutDidComplete(result: SezzleCheckoutResult)
 
     /// Called when the user cancels the checkout from within the Sezzle checkout page.
     func checkoutDidCancel()
