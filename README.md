@@ -226,10 +226,15 @@ Implement `SezzleCheckoutDelegate` to receive callbacks:
 
 ```swift
 extension MyViewController: SezzleCheckoutDelegate {
-    func checkoutDidComplete(orderUUID: String) {
+    func checkoutDidComplete(result: SezzleCheckoutResult) {
         // Checkout succeeded!
-        // Send orderUUID to your backend to capture the payment.
-        print("Order UUID: \(orderUUID)")
+        if let orderUUID = result.orderUUID {
+            // SDK-creates-session flow — send to your backend for capture
+            print("Order UUID: \(orderUUID)")
+        } else if let callbackURL = result.callbackURL {
+            // Server-driven flow — read query params you encoded
+            print("Callback URL: \(callbackURL)")
+        }
     }
 
     func checkoutDidCancel() {
@@ -265,6 +270,53 @@ Content-Type: application/json
 > Capture, refund, release, and order status are always server-to-server calls using your private key. The SDK never handles these operations.
 
 See the [Sezzle API documentation](https://docs.sezzle.com) for full details on server-side operations.
+
+## Server-Driven Integration (BYO Session)
+
+For larger merchants who prefer a fully server-driven integration — no public key on-device, the backend owns session creation, capture, and refunds — use the `startCheckout(checkoutURL:completeURL:cancelURL:…)` overload. The SDK opens the URL, intercepts your chosen callback URLs, and reports back via `SezzleCheckoutDelegate`.
+
+### Step 1 — Backend creates the session
+
+Your backend creates a Sezzle session — see the [`POST /v2/session` reference](https://docs.sezzle.com/docs/api/core/sessions/postv2session) for the full request contract. Two SDK-specific notes:
+
+- **Choose your own `complete_url` / `cancel_url`.** Any URL works — pick a custom scheme like `yourapp-sezzle://...` or HTTPS deep links to a domain you control. You can encode state in the query string (e.g. `yourapp-sezzle://done?orderRef=12345`) and recover it in the SDK callback.
+- **Persist `order.uuid` server-side** before responding to the app — the app only needs `order.checkout_url` plus the two callback URLs.
+
+### Step 2 — App presents checkout
+
+```swift
+SezzleSDK.shared.startCheckout(
+    checkoutURL: checkoutURL,                                            // from order.checkout_url
+    completeURL: URL(string: "yourapp-sezzle://checkout/done")!,         // same as your server's complete_url.href
+    cancelURL:   URL(string: "yourapp-sezzle://checkout/cancelled")!,    // same as your server's cancel_url.href
+    from: self,
+    delegate: self,
+    mode: .webView   // or .systemBrowser
+)
+```
+
+`SezzleSDK.shared.configure(publicKey:)` is **not** required for this flow — there's nothing for the SDK to authenticate.
+
+### Step 3 — Read the result
+
+```swift
+func checkoutDidComplete(result: SezzleCheckoutResult) {
+    guard let callbackURL = result.callbackURL else { return }
+    let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)
+    let orderRef = components?.queryItems?.first(where: { $0.name == "orderRef" })?.value
+    // Look up `orderRef` in your backend, then call /v2/order/{order.uuid}/capture
+}
+```
+
+### Notes
+
+- **Custom scheme required for `.systemBrowser` mode.** `ASWebAuthenticationSession` doesn't support `http`/`https` callbacks — use a custom scheme (e.g. `yourapp-sezzle://...`) with system browser, or any URL with `.webView` mode.
+- **Match your URLs.** Whatever your backend passed as `complete_url.href` / `cancel_url.href`, pass the same URLs to `startCheckout`. The SDK matches on scheme + host + path; query params on the inbound URL are read by you.
+- **`order.uuid` lives on your server.** It's not in the `checkout_url` and isn't echoed back — your backend already has it from the session-creation response.
+
+### Working example
+
+The bundled example app (`Example/SezzleCheckoutExample`) has a **Server-driven flow** card at the top of the product list with two buttons — **System Browser** (uses `sezzle-example://`) and **WebView** (uses HTTPS callbacks) — that exercise both modes end-to-end against the sandbox API. Use it as a copy-pastable reference: see `Example/SezzleCheckoutExample/Screens/ProductViewController.swift` for the request shape, callback URL choices, and `result.callbackURL` parsing.
 
 ## Error Handling
 

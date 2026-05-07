@@ -8,6 +8,7 @@ final class ResultViewController: UIViewController {
 
     enum CheckoutResult {
         case success(orderUUID: String)
+        case successWithCallback(URL)
         case cancelled
         case failed(error: SezzleError)
     }
@@ -63,6 +64,16 @@ final class ResultViewController: UIViewController {
             iconLabel.text = "✅"
             titleLabel.text = "Checkout Complete!"
             detailLabel.text = "Order UUID:\n\(orderUUID)\n\nSend this to your backend to capture the payment."
+
+        case .successWithCallback(let callbackURL):
+            title = "Success"
+            iconLabel.text = "✅"
+            titleLabel.text = "Checkout Complete!"
+            let queryParams = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .map { "\($0.name)=\($0.value ?? "")" }
+                .joined(separator: "\n") ?? "(none)"
+            detailLabel.text = "Callback URL:\n\(callbackURL.absoluteString)\n\nQuery params:\n\(queryParams)"
 
         case .cancelled:
             title = "Cancelled"

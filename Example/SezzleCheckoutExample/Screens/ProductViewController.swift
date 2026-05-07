@@ -48,10 +48,79 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
             stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40),
         ])
 
+        // Server-driven flow demo at the top
+        stack.addArrangedSubview(createServerDrivenSection())
+
         for (index, product) in products.enumerated() {
             let card = createProductCard(product: product, index: index)
             stack.addArrangedSubview(card)
         }
+    }
+
+    private func createServerDrivenSection() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor.separator.cgColor
+
+        let cardStack = UIStackView()
+        cardStack.axis = .vertical
+        cardStack.spacing = 8
+        cardStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(cardStack)
+
+        NSLayoutConstraint.activate([
+            cardStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            cardStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            cardStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            cardStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+        ])
+
+        let title = UILabel()
+        title.text = "Server-driven flow"
+        title.font = .systemFont(ofSize: 18, weight: .bold)
+        cardStack.addArrangedSubview(title)
+
+        let desc = UILabel()
+        desc.text = "Your backend creates the session via POST /v2/session and supplies its own callback URLs. The SDK opens the URL and reports back via callbackURL. No public key needed on-device."
+        desc.font = .systemFont(ofSize: 12)
+        desc.textColor = .secondaryLabel
+        desc.numberOfLines = 0
+        cardStack.addArrangedSubview(desc)
+
+        let buttonRow = UIStackView()
+        buttonRow.axis = .horizontal
+        buttonRow.spacing = 8
+        buttonRow.distribution = .fillEqually
+
+        // System Browser (custom-scheme callbacks — ASWebAuthenticationSession requires it)
+        let browserButton = UIButton(type: .system)
+        browserButton.setTitle("System Browser", for: .normal)
+        browserButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        browserButton.backgroundColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1)
+        browserButton.setTitleColor(.white, for: .normal)
+        browserButton.layer.cornerRadius = 10
+        browserButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        browserButton.addTarget(self, action: #selector(startServerDrivenSystemBrowserDemo), for: .touchUpInside)
+        buttonRow.addArrangedSubview(browserButton)
+
+        // WebView (HTTPS callbacks — universal-link style)
+        let webViewButton = UIButton(type: .system)
+        webViewButton.setTitle("WebView", for: .normal)
+        webViewButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        webViewButton.backgroundColor = .systemBackground
+        webViewButton.setTitleColor(UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1), for: .normal)
+        webViewButton.layer.cornerRadius = 10
+        webViewButton.layer.borderWidth = 2
+        webViewButton.layer.borderColor = UIColor(red: 0x83/255, green: 0x33/255, blue: 0xD4/255, alpha: 1).cgColor
+        webViewButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        webViewButton.addTarget(self, action: #selector(startServerDrivenWebViewDemo), for: .touchUpInside)
+        buttonRow.addArrangedSubview(webViewButton)
+
+        cardStack.addArrangedSubview(buttonRow)
+
+        return card
     }
 
     private func createProductCard(product: (name: String, emoji: String, priceInCents: Int, description: String), index: Int) -> UIView {
@@ -191,10 +260,121 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         SezzleSDK.shared.startCheckout(checkout, from: self, delegate: self, mode: .webView)
     }
 
+    /// WebView mode demo: HTTPS callback URLs (universal-link style). Any URL scheme works
+    /// in WebView mode — the navigation delegate intercepts before the URL loads.
+    @objc private func startServerDrivenWebViewDemo() {
+        let orderRef = "poshmark-demo-\(Int.random(in: 1000...9999))"
+        let completeURL = URL(string: "https://example.com/sezzle-checkout/done?orderRef=\(orderRef)")!
+        let cancelURL = URL(string: "https://example.com/sezzle-checkout/cancelled")!
+        runServerDrivenDemo(orderRef: orderRef, completeURL: completeURL, cancelURL: cancelURL, mode: .webView)
+    }
+
+    /// System Browser mode demo: custom-scheme callback URLs.
+    /// `ASWebAuthenticationSession` requires a custom scheme (won't accept http/https).
+    @objc private func startServerDrivenSystemBrowserDemo() {
+        let orderRef = "poshmark-demo-\(Int.random(in: 1000...9999))"
+        let completeURL = URL(string: "sezzle-example://checkout/done?orderRef=\(orderRef)")!
+        let cancelURL = URL(string: "sezzle-example://checkout/cancelled")!
+        runServerDrivenDemo(orderRef: orderRef, completeURL: completeURL, cancelURL: cancelURL, mode: .systemBrowser)
+    }
+
+    /// Simulates a server-driven integration: the example app pretends to be a backend
+    /// by hitting `/v2/session` directly, then hands the URL to the new pass-URL entrypoint.
+    /// In production, the network call lives on the merchant's server, not in the app.
+    private func runServerDrivenDemo(
+        orderRef: String,
+        completeURL: URL,
+        cancelURL: URL,
+        mode: SezzleCheckoutMode
+    ) {
+        Task {
+            do {
+                let (checkoutURL, _) = try await createSandboxSession(
+                    completeURL: completeURL,
+                    cancelURL: cancelURL,
+                    referenceId: orderRef
+                )
+                SezzleSDK.shared.startCheckout(
+                    checkoutURL: checkoutURL,
+                    completeURL: completeURL,
+                    cancelURL: cancelURL,
+                    from: self,
+                    delegate: self,
+                    mode: mode
+                )
+            } catch {
+                let resultVC = ResultViewController(result: .failed(error: .networkError(error)))
+                navigationController?.pushViewController(resultVC, animated: true)
+            }
+        }
+    }
+
+    /// Stand-in for "merchant's backend creates the session." Hits sandbox.gateway.sezzle.com
+    /// directly with the test public key. Returns (checkoutURL, orderUUID).
+    private func createSandboxSession(
+        completeURL: URL,
+        cancelURL: URL,
+        referenceId: String
+    ) async throws -> (URL, String) {
+        let url = URL(string: "https://sandbox.gateway.sezzle.com/v2/session")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let auth = Data(Secrets.sezzlePublicKey.utf8).base64EncodedString()
+        request.setValue("Basic \(auth)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "complete_url": ["href": completeURL.absoluteString, "method": "GET"],
+            "cancel_url": ["href": cancelURL.absoluteString, "method": "GET"],
+            "customer": [
+                "email": "demo@example.com",
+                "first_name": "Demo",
+                "last_name": "User",
+            ],
+            "order": [
+                "intent": "AUTH",
+                "reference_id": referenceId,
+                "description": "Server-driven demo",
+                "order_amount": ["amount_in_cents": 4999, "currency": "USD"],
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let bodyText = String(data: data, encoding: .utf8) ?? "(non-utf8 body)"
+
+        if let httpResponse = response as? HTTPURLResponse,
+           !(200...299).contains(httpResponse.statusCode) {
+            throw NSError(domain: "ServerDrivenDemo", code: httpResponse.statusCode, userInfo: [
+                NSLocalizedDescriptionKey: "Session creation failed (\(httpResponse.statusCode)): \(bodyText)"
+            ])
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let order = json["order"] as? [String: Any],
+              let urlString = order["checkout_url"] as? String,
+              let url = URL(string: urlString),
+              let orderUUID = order["uuid"] as? String else {
+            throw NSError(domain: "ServerDrivenDemo", code: 0, userInfo: [
+                NSLocalizedDescriptionKey: "Could not parse session response: \(bodyText)"
+            ])
+        }
+        return (url, orderUUID)
+    }
+
     // MARK: - SezzleCheckoutDelegate
 
-    func checkoutDidComplete(orderUUID: String) {
-        let resultVC = ResultViewController(result: .success(orderUUID: orderUUID))
+    func checkoutDidComplete(result: SezzleCheckoutResult) {
+        let resultVC: ResultViewController
+        if let orderUUID = result.orderUUID {
+            // SDK-creates-session flow
+            resultVC = ResultViewController(result: .success(orderUUID: orderUUID))
+        } else if let callbackURL = result.callbackURL {
+            // Server-driven flow
+            resultVC = ResultViewController(result: .successWithCallback(callbackURL))
+        } else {
+            resultVC = ResultViewController(result: .failed(error: .invalidResponse))
+        }
         navigationController?.pushViewController(resultVC, animated: true)
     }
 
