@@ -6,7 +6,13 @@ import UIKit
 final class CheckoutHandler: NSObject {
     private let sessionService: (any SessionServiceProtocol)?
     private let eventLogger: SezzleEventLogger?
-    private weak var delegate: (any SezzleCheckoutDelegate)?
+    // Strong (not weak): SezzleSDK wraps the merchant's delegate in a
+    // ProgressTrackingDelegate so it can clear the in-progress gate on terminal
+    // callbacks. That wrapper is local to startCheckout — if we held it weakly
+    // here it would be deallocated before any callback fires, leaving the gate
+    // stuck and blocking all subsequent checkouts. cleanup() releases this
+    // reference after deliverResult, so no retain cycles.
+    private var delegate: (any SezzleCheckoutDelegate)?
     private var authSession: ASWebAuthenticationSession?
     private var presentationContext: DefaultPresentationContext?
     private var orderUUID: String?

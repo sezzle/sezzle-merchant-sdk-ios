@@ -5,6 +5,13 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-05-08
+
+### Fixed
+- **WebView checkout: external links (Terms, Privacy, etc.) now open in Safari.** `SezzleCheckoutWebViewController` now conforms to `WKUIDelegate` and routes `target="_blank"` / `window.open()` navigations to `UIApplication.shared.open()`. Previously these were silently blocked by `WKWebView`'s default no-popup policy.
+- **Reject overlapping `startCheckout` calls.** Rapid double-taps used to fire a second `startCheckout` while the first was still presenting, which on `.systemBrowser` mode caused `ASWebAuthenticationSession` to fail with `WebAuthenticationSession error 3` (`presentationContextInvalid`) and report a bogus `checkoutDidFail(.networkError(...))` to the merchant. SezzleSDK now tracks an in-progress flag and silently ignores overlapping calls until the first delivers its terminal callback.
+- **Internal:** `CheckoutHandler.delegate` is now strongly held (was `weak`). The new `ProgressTrackingDelegate` wrapper used by the in-progress guard is created locally in `SezzleSDK.startCheckout` — under the previous `weak` reference it was deallocated before any callback could fire, leaving the in-progress gate stuck and blocking all subsequent checkouts. `cleanup()` releases the reference after `deliverResult`, so no retain cycles are introduced.
+
 ## [1.2.0] - 2026-05-06
 
 ### Added

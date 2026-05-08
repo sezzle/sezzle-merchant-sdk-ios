@@ -19,6 +19,7 @@ public final class SezzleSDK {
     private var publicKey: String?
     private var environment: SezzleEnvironment?
     private var checkoutHandler: CheckoutHandler?
+    private var isCheckoutInProgress = false
 
     private init() {}
 
@@ -61,12 +62,23 @@ public final class SezzleSDK {
             return
         }
 
+        // Reject overlapping calls (e.g. rapid double-tap). Without this, a second
+        // startCheckout can fire before the first delivers its result; on
+        // .systemBrowser the second ASWebAuthenticationSession.start() fails with
+        // "WebAuthenticationSession error 3" and the second handler reports a
+        // bogus checkoutDidFail back to the merchant.
+        if isCheckoutInProgress { return }
+        isCheckoutInProgress = true
+
         let httpClient = HTTPClient(publicKey: publicKey, environment: environment)
         let sessionService = SessionService(httpClient: httpClient)
         let eventLogger = SezzleEventLogger(publicKey: publicKey, environment: environment)
         let handler = CheckoutHandler(sessionService: sessionService, eventLogger: eventLogger)
         self.checkoutHandler = handler
-        handler.startCheckout(checkout, from: viewController, delegate: delegate, mode: mode)
+        let wrappedDelegate = ProgressTrackingDelegate(wrapped: delegate) { [weak self] in
+            self?.isCheckoutInProgress = false
+        }
+        handler.startCheckout(checkout, from: viewController, delegate: wrappedDelegate, mode: mode)
     }
 
     /// Start a Sezzle checkout — your backend already created the session.
@@ -107,6 +119,10 @@ public final class SezzleSDK {
         delegate: any SezzleCheckoutDelegate,
         mode: SezzleCheckoutMode = .systemBrowser
     ) {
+        // Reject overlapping calls (see notes on the SezzleCheckout overload above).
+        if isCheckoutInProgress { return }
+        isCheckoutInProgress = true
+
         #if DEBUG
         validate(
             checkoutURL: checkoutURL,
@@ -118,12 +134,15 @@ public final class SezzleSDK {
 
         let handler = CheckoutHandler(sessionService: nil, eventLogger: nil)
         self.checkoutHandler = handler
+        let wrappedDelegate = ProgressTrackingDelegate(wrapped: delegate) { [weak self] in
+            self?.isCheckoutInProgress = false
+        }
         handler.startCheckout(
             checkoutURL: checkoutURL,
             completeURL: completeURL,
             cancelURL: cancelURL,
             from: viewController,
-            delegate: delegate,
+            delegate: wrappedDelegate,
             mode: mode
         )
     }
@@ -156,4 +175,33 @@ public final class SezzleSDK {
         }
     }
     #endif
+}
+
+/// Wraps a merchant-supplied delegate so SezzleSDK can clear its in-progress
+/// flag on terminal callbacks (complete / cancel / fail). Allows the SDK to
+/// reject overlapping `startCheckout` calls without leaking the gate state.
+@MainActor
+private final class ProgressTrackingDelegate: SezzleCheckoutDelegate {
+    private let wrapped: any SezzleCheckoutDelegate
+    private let onTerminal: () -> Void
+
+    init(wrapped: any SezzleCheckoutDelegate, onTerminal: @escaping () -> Void) {
+        self.wrapped = wrapped
+        self.onTerminal = onTerminal
+    }
+
+    func checkoutDidComplete(result: SezzleCheckoutResult) {
+        onTerminal()
+        wrapped.checkoutDidComplete(result: result)
+    }
+
+    func checkoutDidCancel() {
+        onTerminal()
+        wrapped.checkoutDidCancel()
+    }
+
+    func checkoutDidFail(error: SezzleError) {
+        onTerminal()
+        wrapped.checkoutDidFail(error: error)
+    }
 }
