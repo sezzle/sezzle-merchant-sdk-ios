@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'SezzleMerchantSDK'
-  s.version          = '1.2.0'
+  s.version          = '1.2.1'
   s.summary          = 'Sezzle checkout SDK for iOS merchant apps.'
   s.description      = <<-DESC
     Native iOS SDK that lets merchant apps offer Sezzle buy-now-pay-later

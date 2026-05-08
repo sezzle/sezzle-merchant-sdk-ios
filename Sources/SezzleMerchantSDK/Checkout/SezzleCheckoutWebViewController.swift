@@ -3,7 +3,7 @@ import WebKit
 
 /// Presents the Sezzle checkout in a WKWebView inside the app.
 @MainActor
-final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDelegate {
+final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
     private let checkoutURL: URL
     private let completeURL: URL
     private let cancelURL: URL
@@ -89,8 +89,14 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
             config.setURLSchemeHandler(SezzleSchemeHandler(), forURLScheme: scheme)
         }
 
+        // Allow JS-driven popups (target="_blank", window.open) so we can route
+        // them out via the WKUIDelegate handler below — without this the calls
+        // are silently blocked.
+        config.preferences.javaScriptCanOpenWindowsAutomatically = true
+
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
 
@@ -204,6 +210,23 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         activityIndicator.stopAnimating()
         deliverResult { $0.checkoutDidFail(error: .networkError(error)) }
         dismiss(animated: true)
+    }
+
+    // MARK: - WKUIDelegate
+
+    /// Sezzle's checkout page links Terms / Privacy / etc. with `target="_blank"`.
+    /// Without this hook, WKWebView silently blocks them (no new-window mechanism),
+    /// so users see a dead tap. Route external links to the system browser instead.
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+        if let url = navigationAction.request.url {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+        return nil
     }
 
     // MARK: - Callback handling
