@@ -68,12 +68,13 @@ final class ResultViewController: UIViewController {
         case .successWithCallback(let callbackURL):
             title = "Success"
             iconLabel.text = "✅"
-            titleLabel.text = "Checkout Complete!"
+            titleLabel.text = "Server-Driven Checkout Complete!"
+            titleLabel.textColor = .systemGreen
             let queryParams = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?
                 .queryItems?
-                .map { "\($0.name)=\($0.value ?? "")" }
+                .map { "\($0.name) = \($0.value ?? "")" }
                 .joined(separator: "\n") ?? "(none)"
-            detailLabel.text = "Callback URL:\n\(callbackURL.absoluteString)\n\nQuery params:\n\(queryParams)"
+            detailLabel.text = "Callback URL:\n\(callbackURL.absoluteString)\n\nQuery Parameters:\n\(queryParams)\n\nLook up the order in your backend (you encoded its ID in your complete_url) and call POST /v2/order/{uuid}/capture."
 
         case .cancelled:
             title = "Cancelled"
