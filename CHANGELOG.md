@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Widget info modal: locked to large detent.** `SezzleInfoModal` previously presented as a `.pageSheet` with `[.medium(), .large()]` detents and a visible grabber, so users could drag the modal between heights. The educational content doesn't benefit from the drag, and users were finding the resize gesture distracting. Now the sheet locks to `.large()` with the grabber hidden. Swipe-down dismiss and the navigation-bar close button still work — only the height-changing gesture is removed. (MOBILE-7953)
 
+### Example app
+- **Distinguish server-driven success screen.** The example app's `ResultViewController` previously titled both SDK-creates-session and server-driven success states "Checkout Complete!" — making it hard for integrators reading the demo to see which code path they exercised. Server-driven now reads "Server-Driven Checkout Complete!" + helper text pointing to the `POST /v2/order/{uuid}/capture` step, matching the Android example. Pure example-app change — no SDK code or behavior touched. (MOBILE-7952)
+
 ### Compatibility
 - No public API change. No new permissions or `Info.plist` entries required of merchants. No behavior change for either checkout flow (SDK-creates-session, server-driven) or either presentation mode (`.systemBrowser`, `.webView`). Existing integrations recompile without modification.
 
