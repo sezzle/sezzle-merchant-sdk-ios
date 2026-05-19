@@ -5,6 +5,17 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-05-19
+
+### Fixed
+- **WebView OAuth popups now stay in-app.** `SezzleCheckoutWebViewController` previously routed every `window.open` popup to `UIApplication.shared.open` via `WKUIDelegate.createWebViewWith` (correct for TILA docs, marketplace links — wrong for "Sign in with Apple" and other OAuth providers that use `response_mode=web_message` and need `window.opener.postMessage` back to the parent SPA). Popups to known auth hosts (`appleid.apple.com`, `accounts.google.com`, `*.facebook.com`) now render in a child `SezzleAuthPopupController` overlay that maintains the opener relationship; the overlay closes itself when the OAuth library calls `window.close()` (delivered via `WKUIDelegate.webViewDidClose`). Non-auth popups still route to Safari (preserves the 1.0.5 behavior). (MOBILE-8460 item 1)
+
+### Changed
+- **Widget info modal: locked to large detent.** `SezzleInfoModal` previously presented as a `.pageSheet` with `[.medium(), .large()]` detents and a visible grabber, so users could drag the modal between heights. The educational content doesn't benefit from the drag, and users were finding the resize gesture distracting. Now the sheet locks to `.large()` with the grabber hidden. Swipe-down dismiss and the navigation-bar close button still work — only the height-changing gesture is removed. (MOBILE-7953)
+
+### Compatibility
+- No public API change. No new permissions or `Info.plist` entries required of merchants. No behavior change for either checkout flow (SDK-creates-session, server-driven) or either presentation mode (`.systemBrowser`, `.webView`). Existing integrations recompile without modification.
+
 ## [1.2.1] - 2026-05-08
 
 ### Fixed

@@ -4,6 +4,22 @@ import WebKit
 /// Presents the Sezzle checkout in a WKWebView inside the app.
 @MainActor
 final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
+    /// Hosts whose `window.open` popups must stay in-app so the popup's JS can
+    /// `postMessage` back to the opener (Apple Sign-In's `response_mode=web_message`
+    /// requires this). Any other popup falls through to the system browser —
+    /// preserves the existing TILA / marketplace-link behavior.
+    private static let authPopupHosts: Set<String> = [
+        "appleid.apple.com",
+        "accounts.google.com",
+        "www.facebook.com",
+        "graph.facebook.com",
+    ]
+
+    private static func isAuthPopupHost(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        return authPopupHosts.contains { host == $0 || host.hasSuffix(".\($0)") }
+    }
+
     private let checkoutURL: URL
     private let completeURL: URL
     private let cancelURL: URL
@@ -214,18 +230,31 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
 
     // MARK: - WKUIDelegate
 
-    /// Sezzle's checkout page links Terms / Privacy / etc. with `target="_blank"`.
-    /// Without this hook, WKWebView silently blocks them (no new-window mechanism),
-    /// so users see a dead tap. Route external links to the system browser instead.
+    /// Sezzle's checkout page opens two kinds of popups via `window.open`:
+    ///   - **Doc / marketplace links** (Terms, Privacy, TILA disclosures) — route
+    ///     these to Safari via `UIApplication.shared.open`. Preserves the original
+    ///     1.0.5 behavior.
+    ///   - **OAuth popups** (Sign in with Apple, etc.) — these need to stay in-app
+    ///     so the popup's JS can `postMessage` back to its `window.opener`. Routing
+    ///     them to Safari orphans the opener and silently drops the auth result.
+    ///     Render in a child `SezzleAuthPopupController`; the popup's WKWebView is
+    ///     constructed with the configuration WebKit hands us, which preserves the
+    ///     opener relationship.
     func webView(
         _ webView: WKWebView,
         createWebViewWith configuration: WKWebViewConfiguration,
         for navigationAction: WKNavigationAction,
         windowFeatures: WKWindowFeatures
     ) -> WKWebView? {
-        if let url = navigationAction.request.url {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        guard let url = navigationAction.request.url else { return nil }
+
+        if Self.isAuthPopupHost(url) {
+            let popup = SezzleAuthPopupController(configuration: configuration)
+            present(popup, animated: true)
+            return popup.webView
         }
+
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
         return nil
     }
 
