@@ -26,8 +26,13 @@ public final class SezzleInfoModal {
         let nav = UINavigationController(rootViewController: modal)
         nav.modalPresentationStyle = .pageSheet
         if #available(iOS 15.0, *), let sheet = nav.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
+            // Lock the modal at medium height — fits the educational content (logo,
+            // title, schedule card, footer) without the giant empty space that the
+            // large detent leaves below. Single detent + no grabber means the modal
+            // is fixed-height; swipe-down and the close button still dismiss
+            // (MOBILE-7953).
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = false
         }
         viewController.present(nav, animated: true)
     }
