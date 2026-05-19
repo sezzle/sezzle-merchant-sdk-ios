@@ -26,8 +26,12 @@ public final class SezzleInfoModal {
         let nav = UINavigationController(rootViewController: modal)
         nav.modalPresentationStyle = .pageSheet
         if #available(iOS 15.0, *), let sheet = nav.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
+            // Lock the modal at large height — users were dragging the medium
+            // detent up to large and back, which the educational content doesn't
+            // benefit from. Single detent + no grabber gives a stable sheet that
+            // can still be dismissed with swipe-down or the close button (MOBILE-7953).
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
         }
         viewController.present(nav, animated: true)
     }
