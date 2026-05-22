@@ -5,6 +5,16 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-05-22
+
+### Fixed
+- **WebView checkout no longer shares cookies across users on the same device.** `SezzleCheckoutWebViewController` now configures `WKWebViewConfiguration.websiteDataStore = .nonPersistent()`. Previously the controller inherited `WKWebsiteDataStore.default()` — a single app-wide persistent store — so Sezzle cookies set during one user's checkout leaked into the next user's session even though the merchant SDK was given a different `SezzleCustomer.email` and a fresh `POST /v2/session` UUID. (Poshmark integration report — User A's credit-limit decline showing for User B after a logout/login.)
+
+  Trade-off: returning Sezzle users now re-authenticate to Sezzle on each `WEB_VIEW` checkout in the same app. `SYSTEM_BROWSER` mode (which shares cookies with Chrome via `ASWebAuthenticationSession`) is unaffected and continues to provide persistent Sezzle login. Use System Browser mode if cookie persistence matters for your UX.
+
+### Compatibility
+- No public API change. No new permissions. No new dependencies. Existing integrations recompile and link without modification.
+
 ## [1.2.1] - 2026-05-08
 
 ### Fixed
