@@ -19,7 +19,9 @@ final class SezzleClearWebViewDataTests: XCTestCase {
             dispatchPrecondition(condition: .onQueue(.main))
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 5.0)
+        // CI sometimes takes 5+ seconds for the first WKWebsiteDataStore.fetchDataRecords call
+        // on a freshly-booted simulator (cold-start init). Generous timeout.
+        wait(for: [expectation], timeout: 30.0)
     }
 
     func testClearWebViewDataIsSafeWithoutCompletion() {
@@ -37,6 +39,6 @@ final class SezzleClearWebViewDataTests: XCTestCase {
                 expectation2.fulfill()
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 10.0)
+        wait(for: [expectation1, expectation2], timeout: 60.0)
     }
 }
