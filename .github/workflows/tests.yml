@@ -14,11 +14,50 @@ jobs:
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+      - name: Ensure an iOS Simulator is available
+        # The macos-15 runner image occasionally rotates to a state where no
+        # concrete iOS Simulator devices are pre-created (only "Any iOS Simulator
+        # Device" placeholder), and `xcodebuild test` fails with "no available
+        # devices matched the request". Create one explicitly using whatever iOS
+        # runtime is installed (downloading if missing), against an iPhone device
+        # type bundled with the Xcode version on the runner.
+        run: |
+          set -euo pipefail
+          if xcrun simctl list devices available iOS | grep -qE "iPhone"; then
+            echo "iOS Simulator already provisioned; skipping create."
+          else
+            echo "No iOS Simulator found — provisioning one."
+            xcrun simctl list runtimes
+            RUNTIME=$(xcrun simctl list runtimes available -j | python3 -c "import sys,json; rs=[r['identifier'] for r in json.load(sys.stdin)['runtimes'] if 'iOS' in r['name']]; print(rs[-1] if rs else '')")
+            if [ -z "$RUNTIME" ]; then
+              echo "No iOS runtime installed; downloading…"
+              sudo xcodebuild -downloadPlatform iOS
+              RUNTIME=$(xcrun simctl list runtimes available -j | python3 -c "import sys,json; rs=[r['identifier'] for r in json.load(sys.stdin)['runtimes'] if 'iOS' in r['name']]; print(rs[-1] if rs else '')")
+            fi
+            DEVTYPE=$(xcrun simctl list devicetypes -j | python3 -c "import sys,json; dts=[d['identifier'] for d in json.load(sys.stdin)['devicetypes'] if 'iPhone-16' in d['identifier'] or 'iPhone-15' in d['identifier']]; print(dts[0] if dts else '')")
+            if [ -z "$DEVTYPE" ]; then
+              DEVTYPE=$(xcrun simctl list devicetypes -j | python3 -c "import sys,json; dts=[d['identifier'] for d in json.load(sys.stdin)['devicetypes'] if 'iPhone' in d['identifier']]; print(dts[-1] if dts else '')")
+            fi
+            echo "Creating Simulator: device=$DEVTYPE runtime=$RUNTIME"
+            xcrun simctl create "Test iPhone" "$DEVTYPE" "$RUNTIME"
+          fi
+          xcrun simctl list devices available iOS
+
       - name: Run unit tests
         run: |
+          # Resolve simulator by UDID rather than name — the runner's pre-provisioned
+          # device names change between image refreshes, and the previous hardcoded
+          # `name=iPhone 16` started failing on 2026-05-22 when the macos-15 image
+          # rotated to a state without that specific device pre-created.
+          SIM_ID=$(xcrun simctl list devices available -j | python3 -c "import sys,json; d=json.load(sys.stdin)['devices']; sims=[dev['udid'] for k,v in d.items() if 'iOS' in k for dev in v if 'iPhone' in dev['name'] and dev.get('isAvailable',True)]; print(sims[0] if sims else '')")
+          if [ -z "$SIM_ID" ]; then
+            echo "::error::No iPhone Simulator available — cannot run tests."
+            exit 1
+          fi
+          echo "Running on Simulator $SIM_ID"
           xcodebuild test \
             -scheme SezzleMerchantSDK \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
             -skipMacroValidation \
             -resultBundlePath TestResults \
             | xcpretty --color && exit ${PIPESTATUS[0]}

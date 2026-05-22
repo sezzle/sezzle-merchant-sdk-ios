@@ -10,14 +10,14 @@ final class CheckoutHandlerMatchTests: XCTestCase {
     }
 
     func testMatch_extraQueryParamsStillMatch() {
-        let target = URL(string: "poshmark-sezzle://checkout/done")!
-        let url = URL(string: "poshmark-sezzle://checkout/done?orderRef=12345&extra=true")!
+        let target = URL(string: "merchant-sezzle://checkout/done")!
+        let url = URL(string: "merchant-sezzle://checkout/done?orderRef=12345&extra=true")!
         XCTAssertTrue(CheckoutHandler.matches(url, target: target))
     }
 
     func testMatch_caseInsensitiveSchemeAndHost() {
-        let target = URL(string: "Poshmark-Sezzle://Checkout/done")!
-        let url = URL(string: "poshmark-sezzle://checkout/done")!
+        let target = URL(string: "Merchant-Sezzle://Checkout/done")!
+        let url = URL(string: "merchant-sezzle://checkout/done")!
         XCTAssertTrue(CheckoutHandler.matches(url, target: target))
     }
 

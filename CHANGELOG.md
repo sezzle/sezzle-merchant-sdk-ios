@@ -5,6 +5,34 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-05-22
+
+### Added
+- **`SezzleSDK.shared.clearWebViewData(completion:)`** — new public API for merchants to clear Sezzle's cookies and Web storage from `WKWebsiteDataStore.default()`. **Call this on user logout** (or account switch) so the next Sezzle checkout starts with a fresh session.
+
+  ```swift
+  // In your merchant app's logout flow:
+  func onUserLogout() {
+      // ...clear your own session state...
+      SezzleSDK.shared.clearWebViewData()
+  }
+
+  // Or with a completion handler if you need to know when it's done:
+  SezzleSDK.shared.clearWebViewData {
+      // safe to start a new Sezzle checkout as a different user now
+  }
+  ```
+
+  Why this is needed: iOS's `WKWebsiteDataStore.default()` is a single app-wide persistent store. Cookies set during one user's Sezzle checkout (auth tokens, session identifiers) persist across users on the same device — without this call, the next user's first BNPL attempt can resume the previous user's Sezzle session and surface their state (e.g. credit-limit decline) to the wrong customer.
+
+  The clear is **scoped to Sezzle's own domains** (`sezzle.com` and all subdomains) — your other cookies and Web storage are not touched. Safe to call repeatedly; safe to call when no Sezzle checkout has ever run in this process. The operation is asynchronous; the optional completion handler fires on the main queue.
+
+  Affects `.webView` mode only. `.systemBrowser` mode (`ASWebAuthenticationSession` sharing cookies with Chrome / Safari) is outside the SDK's reach.
+
+### Compatibility
+- **No automatic clearing.** Merchants who don't call `clearWebViewData()` will still see the cross-user cookie leak in `.webView` mode. This is intentional — the SDK does not assume when a logout has happened; you do. Returning Sezzle users keep their persistent login between checkouts under the same merchant-app user, which is preferable when only one person uses the device.
+- Version jumps from 1.2.1 → 1.2.2 sequentially. No public API removals. No new permissions. No new dependencies. Existing integrations recompile and link without modification — only merchants implementing multi-user flows need to wire up the new call.
+
 ## [1.2.1] - 2026-05-08
 
 ### Fixed
