@@ -9,9 +9,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
     private let cancelURL: URL
     private weak var checkoutDelegate: (any SezzleCheckoutDelegate)?
     private var resultDelivered = false
-    // Internal (default access) so `@testable import` can read the configuration in unit tests.
-    // Still effectively private — there's no external usage path because the class itself is internal.
-    private(set) var webView: WKWebView!
+    private var webView: WKWebView!
     private var activityIndicator: UIActivityIndicatorView!
 
     init(
@@ -81,17 +79,6 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
 
     private func setupWebView() {
         let config = WKWebViewConfiguration()
-        // Isolate the Sezzle checkout's cookies/localStorage/sessionStorage in an in-memory
-        // data store. The default WKWebViewConfiguration inherits WKWebsiteDataStore.default(),
-        // which is shared app-wide and persistent — so cookies set by one user's checkout
-        // leak into the next user's session on the same device. The merchant SDK's contract
-        // is "create a fresh session via POST /v2/session, then present checkout"; persistent
-        // Sezzle-side cookies aren't part of that contract and actively break multi-user
-        // device scenarios (logout + re-login as different user). Each checkout now gets its
-        // own ephemeral store, garbage-collected when this controller is dismissed.
-        // (Trade-off: returning Sezzle users re-authenticate per checkout in WEB_VIEW mode.
-        // System-browser mode keeps cookie sharing with Chrome for that use case.)
-        config.websiteDataStore = .nonPersistent()
         config.allowsInlineMediaPlayback = true
 
         // Register a scheme handler for the merchant's callback scheme so WKWebView

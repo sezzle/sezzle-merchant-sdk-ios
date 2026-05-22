@@ -7,13 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.2] - 2026-05-22
 
-### Fixed
-- **WebView checkout no longer shares cookies across users on the same device.** `SezzleCheckoutWebViewController` now configures `WKWebViewConfiguration.websiteDataStore = .nonPersistent()`. Previously the controller inherited `WKWebsiteDataStore.default()` — a single app-wide persistent store — so Sezzle cookies set during one user's checkout leaked into the next user's session even though the merchant SDK was given a different `SezzleCustomer.email` and a fresh `POST /v2/session` UUID. (Poshmark integration report — User A's credit-limit decline showing for User B after a logout/login.)
+### Added
+- **`SezzleSDK.shared.clearWebViewData(completion:)`** — new public API for merchants to clear Sezzle's cookies and Web storage from `WKWebsiteDataStore.default()`. **Call this on user logout** (or account switch) so the next Sezzle checkout starts with a fresh session.
 
-  Trade-off: returning Sezzle users now re-authenticate to Sezzle on each `WEB_VIEW` checkout in the same app. `SYSTEM_BROWSER` mode (which shares cookies with Chrome via `ASWebAuthenticationSession`) is unaffected and continues to provide persistent Sezzle login. Use System Browser mode if cookie persistence matters for your UX.
+  ```swift
+  // In your merchant app's logout flow:
+  func onUserLogout() {
+      // ...clear your own session state...
+      SezzleSDK.shared.clearWebViewData()
+  }
+
+  // Or with a completion handler if you need to know when it's done:
+  SezzleSDK.shared.clearWebViewData {
+      // safe to start a new Sezzle checkout as a different user now
+  }
+  ```
+
+  Why this is needed: iOS's `WKWebsiteDataStore.default()` is a single app-wide persistent store. Cookies set during one user's Sezzle checkout (auth tokens, session identifiers) persist across users on the same device — without this call, the next user's first BNPL attempt can resume the previous user's Sezzle session and surface their state (e.g. credit-limit decline) to the wrong customer. Reported by Poshmark — User A's credit-limit decline showing for User B after a logout/login.
+
+  The clear is **scoped to Sezzle's own domains** (`sezzle.com` and all subdomains) — your other cookies and Web storage are not touched. Safe to call repeatedly; safe to call when no Sezzle checkout has ever run in this process. The operation is asynchronous; the optional completion handler fires on the main queue.
+
+  Affects `.webView` mode only. `.systemBrowser` mode (`ASWebAuthenticationSession` sharing cookies with Chrome / Safari) is outside the SDK's reach.
 
 ### Compatibility
-- No public API change. No new permissions. No new dependencies. Existing integrations recompile and link without modification.
+- **No automatic clearing.** Merchants who don't call `clearWebViewData()` will still see the cross-user cookie leak in `.webView` mode — this is by design, matching the pattern of competing SDKs (Affirm's `clearCookies(Context)` is the same shape). The SDK does not assume when a logout has happened; you do.
+- Version jumps from 1.2.1 → 1.2.2 sequentially. No public API removals. No new permissions. No new dependencies. Existing integrations recompile and link without modification — only merchants implementing multi-user flows need to wire up the new call.
 
 ## [1.2.1] - 2026-05-08
 

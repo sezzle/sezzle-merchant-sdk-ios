@@ -22,7 +22,28 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         super.viewDidLoad()
         title = "Sezzle Widget Demo"
         view.backgroundColor = .systemBackground
+        // "Simulate logout" toolbar button — invokes SezzleSDK.clearWebViewData() so QA can
+        // verify the API does what merchants will use it for: clear Sezzle's cookies between
+        // users on a shared device.
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Clear",
+            style: .plain,
+            target: self,
+            action: #selector(simulateLogout)
+        )
         setupUI()
+    }
+
+    @objc private func simulateLogout() {
+        SezzleSDK.shared.clearWebViewData { [weak self] in
+            let alert = UIAlertController(
+                title: "Cleared",
+                message: "Next checkout starts fresh.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
 
     private func setupUI() {

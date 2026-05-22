@@ -154,6 +154,33 @@ public final class SezzleSDK {
         publicKey != nil && environment != nil
     }
 
+    /// Clears Sezzle's cookies and Web storage from `WKWebsiteDataStore.default()`.
+    ///
+    /// **Call this when your app's user logs out** (or switches accounts) so the next
+    /// Sezzle checkout starts with a fresh session.
+    ///
+    /// Why this exists: iOS's `WKWebsiteDataStore.default()` is a single app-wide
+    /// persistent store. Cookies set by one user's Sezzle checkout (auth tokens, session
+    /// identifiers) persist across users on the same device — without this call, the next
+    /// user's first BNPL attempt can resume the previous user's Sezzle session and surface
+    /// their state (e.g. credit-limit decline) to the wrong customer.
+    ///
+    /// The clear is **scoped to Sezzle's own domains** — your other cookies and Web storage
+    /// are not touched. Safe to call repeatedly; safe to call when no Sezzle checkout has
+    /// ever run in this process. The operation is asynchronous; pass a completion handler
+    /// if you need to know when it's done.
+    ///
+    /// Affects `.webView` mode only. `.systemBrowser` mode (`ASWebAuthenticationSession`)
+    /// shares cookies with Chrome / Safari and is outside the SDK's reach — if you need
+    /// to clear those, the user should clear them in the system browser.
+    ///
+    /// - Parameter completion: Optional callback invoked on the main actor after the
+    ///   clear completes. Pass `nil` for fire-and-forget.
+    @MainActor
+    public func clearWebViewData(completion: (@MainActor () -> Void)? = nil) {
+        SezzleCookieClearer.clear(completion: completion)
+    }
+
     #if DEBUG
     private func validate(
         checkoutURL: URL,
