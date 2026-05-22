@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   }
   ```
 
-  Why this is needed: iOS's `WKWebsiteDataStore.default()` is a single app-wide persistent store. Cookies set during one user's Sezzle checkout (auth tokens, session identifiers) persist across users on the same device — without this call, the next user's first BNPL attempt can resume the previous user's Sezzle session and surface their state (e.g. credit-limit decline) to the wrong customer. Reported by Poshmark — User A's credit-limit decline showing for User B after a logout/login.
+  Why this is needed: iOS's `WKWebsiteDataStore.default()` is a single app-wide persistent store. Cookies set during one user's Sezzle checkout (auth tokens, session identifiers) persist across users on the same device — without this call, the next user's first BNPL attempt can resume the previous user's Sezzle session and surface their state (e.g. credit-limit decline) to the wrong customer.
 
   The clear is **scoped to Sezzle's own domains** (`sezzle.com` and all subdomains) — your other cookies and Web storage are not touched. Safe to call repeatedly; safe to call when no Sezzle checkout has ever run in this process. The operation is asynchronous; the optional completion handler fires on the main queue.
 

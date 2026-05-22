@@ -10,8 +10,7 @@ import WebKit
 /// inherited by every WebView with the default `WKWebViewConfiguration`. Cookies set during
 /// one user's Sezzle checkout (auth tokens, session identifiers) persist across users on the
 /// same device. Without an explicit clear, the next user's first BNPL attempt can resume the
-/// previous user's Sezzle session and surface their state to the wrong customer. (Reported
-/// by Poshmark — User A's credit-limit decline showing for User B after a logout/login.)
+/// previous user's Sezzle session and surface their state to the wrong customer.
 ///
 /// The clear is **scoped to Sezzle's own domains** — the merchant app's other cookies and
 /// Web storage are not touched. `removeData(ofTypes:modifiedSince:)` would wipe the whole

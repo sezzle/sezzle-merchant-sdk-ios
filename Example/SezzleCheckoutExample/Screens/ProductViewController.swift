@@ -284,7 +284,7 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
     /// WebView mode demo: HTTPS callback URLs (universal-link style). Any URL scheme works
     /// in WebView mode — the navigation delegate intercepts before the URL loads.
     @objc private func startServerDrivenWebViewDemo() {
-        let orderRef = "poshmark-demo-\(Int.random(in: 1000...9999))"
+        let orderRef = "merchant-demo-\(Int.random(in: 1000...9999))"
         let completeURL = URL(string: "https://example.com/sezzle-checkout/done?orderRef=\(orderRef)")!
         let cancelURL = URL(string: "https://example.com/sezzle-checkout/cancelled")!
         runServerDrivenDemo(orderRef: orderRef, completeURL: completeURL, cancelURL: cancelURL, mode: .webView)
@@ -293,7 +293,7 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
     /// System Browser mode demo: custom-scheme callback URLs.
     /// `ASWebAuthenticationSession` requires a custom scheme (won't accept http/https).
     @objc private func startServerDrivenSystemBrowserDemo() {
-        let orderRef = "poshmark-demo-\(Int.random(in: 1000...9999))"
+        let orderRef = "merchant-demo-\(Int.random(in: 1000...9999))"
         let completeURL = URL(string: "sezzle-example://checkout/done?orderRef=\(orderRef)")!
         let cancelURL = URL(string: "sezzle-example://checkout/cancelled")!
         runServerDrivenDemo(orderRef: orderRef, completeURL: completeURL, cancelURL: cancelURL, mode: .systemBrowser)

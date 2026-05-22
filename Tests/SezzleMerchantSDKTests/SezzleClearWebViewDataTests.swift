@@ -6,10 +6,9 @@ import WebKit
 /// purge Sezzle's cookies and Web storage from `WKWebsiteDataStore.default()` (typically
 /// called on user logout, to prevent cross-user session leak in `.webView` mode).
 ///
-/// Why this exists: reported by Poshmark — User A's credit-limit decline showing for User B
-/// after a logout/login. The SDK does not clear automatically; merchants are responsible for
-/// calling this when their user signs out. These tests verify the API exists, can be called
-/// safely with no Sezzle data present, and that the completion handler fires on the main queue.
+/// The SDK does not clear automatically; merchants are responsible for calling this when their
+/// user signs out. These tests verify the API exists, can be called safely with no Sezzle data
+/// present, and that the completion handler fires on the main queue.
 @MainActor
 final class SezzleClearWebViewDataTests: XCTestCase {
 

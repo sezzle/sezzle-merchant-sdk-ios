@@ -10,7 +10,7 @@ final class SezzleCheckoutResultTests: XCTestCase {
     }
 
     func testInit_serverDrivenFlow() {
-        let url = URL(string: "poshmark-sezzle://checkout/done?orderRef=12345")!
+        let url = URL(string: "merchant-sezzle://checkout/done?orderRef=12345")!
         let result = SezzleCheckoutResult(callbackURL: url)
         XCTAssertNil(result.orderUUID)
         XCTAssertEqual(result.callbackURL, url)
@@ -23,7 +23,7 @@ final class SezzleCheckoutResultTests: XCTestCase {
     }
 
     func testCallbackURL_queryParamsAccessible() {
-        let url = URL(string: "poshmark-sezzle://checkout/done?orderRef=12345&promo=summer")!
+        let url = URL(string: "merchant-sezzle://checkout/done?orderRef=12345&promo=summer")!
         let result = SezzleCheckoutResult(callbackURL: url)
 
         let components = URLComponents(url: result.callbackURL!, resolvingAgainstBaseURL: false)!
