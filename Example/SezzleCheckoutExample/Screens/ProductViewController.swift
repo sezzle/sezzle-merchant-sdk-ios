@@ -208,7 +208,7 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         buttonRow.spacing = 8
         buttonRow.distribution = .fillEqually
 
-        // System B	rowser (custom-scheme callbacks — ASWebAuthenticationSession requires it)
+        // System Browser (custom-scheme callbacks — ASWebAuthenticationSession requires it)
         let browserButton = UIButton(type: .system)
         browserButton.setTitle("System Browser", for: .normal)
         browserButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
