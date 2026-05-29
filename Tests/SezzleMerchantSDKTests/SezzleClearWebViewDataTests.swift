@@ -41,4 +41,12 @@ final class SezzleClearWebViewDataTests: XCTestCase {
         }
         wait(for: [expectation1, expectation2], timeout: 60.0)
     }
+
+    /// `/v4/users/logout` is hit on `api.sezzle.com` in production and `sandbox.api.sezzle.com`
+    /// in sandbox — *not* on the gateway host. Locks the host split so a future refactor of
+    /// `SezzleEnvironment` can't silently send the logout call to the wrong place.
+    func testEnvironmentAPIURLs() {
+        XCTAssertEqual(SezzleEnvironment.production.apiURL.absoluteString, "https://api.sezzle.com")
+        XCTAssertEqual(SezzleEnvironment.sandbox.apiURL.absoluteString, "https://sandbox.api.sezzle.com")
+    }
 }

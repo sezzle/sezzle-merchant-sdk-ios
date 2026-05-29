@@ -5,6 +5,30 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-05-29
+
+### Fixed
+- **`clearWebViewData()` now also invalidates the server-side Sezzle session.** On a real device, even after the WebView's cookies and Web storage are fully cleared (which 1.2.2's implementation does correctly), Sezzle's backend was still able to recognize the device on the next checkout and pre-bind the new session to the prior user's account — so merchant apps with multi-user flows saw the next user land on the place-order screen authenticated as the previous user.
+
+  As of 1.2.3, `clearWebViewData()` now performs **two** steps in order:
+
+  1. Reads the WebView's Sezzle `access_token` + `refresh_token` cookies (if present) and POSTs them to `/v4/users/logout` so the backend invalidates the refresh token and forgets the device→user binding. Best-effort — 5 second timeout, errors are swallowed so a slow network never blocks the merchant's logout flow.
+  2. Removes Sezzle-domain cookies and Web storage from `WKWebsiteDataStore.default()` (the existing 1.2.2 behavior, unchanged).
+
+  Merchants don't need to change anything — same public API, same call site on user logout. The call sequence above runs automatically.
+
+  ```swift
+  // Same call as before — now closes the loop server-side as well.
+  SezzleSDK.shared.clearWebViewData {
+      // Safe to start a new Sezzle checkout for a different user from here.
+  }
+  ```
+
+### Compatibility
+- No public API changes. No new permissions. No new dependencies.
+- The logout call uses `URLSession.shared` against `api.sezzle.com` (or `sandbox.api.sezzle.com` when configured for `.sandbox`). If the SDK was never `configure(...)`d (server-driven flow), the call defaults to production.
+- No-op when no Sezzle auth cookies are present (safe to call repeatedly, safe to call when no Sezzle checkout has ever run).
+
 ## [1.2.2] - 2026-05-22
 
 ### Added

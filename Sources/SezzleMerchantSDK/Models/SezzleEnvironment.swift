@@ -21,4 +21,14 @@ public enum SezzleEnvironment: Sendable {
             URL(string: "https://gateway.sezzle.com")!
         }
     }
+
+    /// Sezzle's user-facing API host (sezzle-pay). `/v4/users/logout` lives here, not on the gateway.
+    var apiURL: URL {
+        switch self {
+        case .sandbox:
+            URL(string: "https://sandbox.api.sezzle.com")!
+        case .production:
+            URL(string: "https://api.sezzle.com")!
+        }
+    }
 }

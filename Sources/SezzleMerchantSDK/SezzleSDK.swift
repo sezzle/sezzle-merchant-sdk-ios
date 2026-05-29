@@ -154,16 +154,24 @@ public final class SezzleSDK {
         publicKey != nil && environment != nil
     }
 
-    /// Clears Sezzle's cookies and Web storage from `WKWebsiteDataStore.default()`.
+    /// Ends Sezzle's session and clears Sezzle's cookies + Web storage from
+    /// `WKWebsiteDataStore.default()`.
     ///
     /// **Call this when your app's user logs out** (or switches accounts) so the next
     /// Sezzle checkout starts with a fresh session.
     ///
-    /// Why this exists: iOS's `WKWebsiteDataStore.default()` is a single app-wide
-    /// persistent store. Cookies set by one user's Sezzle checkout (auth tokens, session
-    /// identifiers) persist across users on the same device — without this call, the next
-    /// user's first BNPL attempt can resume the previous user's Sezzle session and surface
-    /// their state (e.g. credit-limit decline) to the wrong customer.
+    /// What it does, in order:
+    /// 1. Reads the WebView's Sezzle auth cookies and POSTs them to `/v4/users/logout` so
+    ///    Sezzle's backend invalidates the refresh token and forgets the device→user binding.
+    ///    Best-effort — short timeout, errors are swallowed so a slow network never blocks
+    ///    your logout flow.
+    /// 2. Removes all Sezzle-domain cookies + Web storage (localStorage, IndexedDB, service
+    ///    workers, etc.) from `WKWebsiteDataStore.default()`.
+    ///
+    /// Step 1 is what fixes cross-user account leakage on real devices: a fully-empty WebView
+    /// jar is not enough because Sezzle's backend can still recognize the device and pre-bind
+    /// the next checkout to the prior user's account. Invalidating the refresh token server-side
+    /// is what closes the loop.
     ///
     /// The clear is **scoped to Sezzle's own domains** — your other cookies and Web storage
     /// are not touched. Safe to call repeatedly; safe to call when no Sezzle checkout has
@@ -178,7 +186,7 @@ public final class SezzleSDK {
     ///   clear completes. Pass `nil` for fire-and-forget.
     @MainActor
     public func clearWebViewData(completion: (@MainActor () -> Void)? = nil) {
-        SezzleCookieClearer.clear(completion: completion)
+        SezzleCookieClearer.clear(environment: environment, completion: completion)
     }
 
     #if DEBUG
