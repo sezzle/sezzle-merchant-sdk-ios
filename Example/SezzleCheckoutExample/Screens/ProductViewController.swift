@@ -1,8 +1,13 @@
 import UIKit
+import WebKit
 import SezzleMerchantSDK
 
 /// Shows multiple products at different price points demonstrating all widget variants.
 final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
+
+    /// Holds the throwaway WKWebView used by the Seed flow alive long enough for WebKit's
+    /// networking process to spin up and flush the seeded cookie to disk. Released after.
+    private var seedFlushWebView: WKWebView?
 
     // Widget config with long-term enabled for demo (LT kicks in at $250+)
     private let widgetConfig = SezzleWidgetConfig(
@@ -22,9 +27,16 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
         super.viewDidLoad()
         title = "Sezzle Widget Demo"
         view.backgroundColor = .systemBackground
-        // "Simulate logout" toolbar button — invokes SezzleSDK.clearWebViewData() so QA can
-        // verify the API does what merchants will use it for: clear Sezzle's cookies between
-        // users on a shared device.
+        // Repro toolbar for the clearWebViewData() real-device bug (YangJe @ Posh, 2026-05-28):
+        //   Seed  — writes a persistent .sezzle.com cookie + forces WebKit to flush it to disk.
+        //   Read  — shows cookie-store count vs. fetchDataRecords count for sezzle.com.
+        //   Clear — calls SezzleSDK.shared.clearWebViewData() and re-reads both counts.
+        // Manual repro on a real iPhone: tap Seed → force-quit from app switcher → relaunch →
+        // tap Read (expect cookies>0, records=0 on real device) → Clear → Read (expect both 0).
+        navigationItem.leftBarButtonItems = [
+            UIBarButtonItem(title: "Seed", style: .plain, target: self, action: #selector(seedReproCookie)),
+            UIBarButtonItem(title: "Read", style: .plain, target: self, action: #selector(readSezzleCookies)),
+        ]
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "Clear",
             style: .plain,
@@ -36,14 +48,95 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
 
     @objc private func simulateLogout() {
         SezzleSDK.shared.clearWebViewData { [weak self] in
-            let alert = UIAlertController(
-                title: "Cleared",
-                message: "Next checkout starts fresh.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            self?.present(alert, animated: true)
+            self?.countSezzleData { cookieCount, recordCount in
+                self?.showDiagnostic(
+                    title: "Cleared",
+                    message: "After clearWebViewData():\n• cookie store: \(cookieCount)\n• data records: \(recordCount)\n\nBoth should be 0 if the clear worked."
+                )
+            }
         }
+    }
+
+    /// Writes a persistent `.sezzle.com` cookie directly to the WKWebsiteDataStore default
+    /// cookie jar, then briefly loads `about:blank` in a hidden WKWebView using the same
+    /// default data store. The throwaway load forces WebKit's networking process to come up
+    /// and flush the cookie to disk — without it, a cookie set via `setCookie` may stay in
+    /// memory and never persist across a force-quit, which would make this repro useless.
+    @objc private func seedReproCookie() {
+        guard let cookie = HTTPCookie(properties: [
+            .name: "sezzle_repro_marker",
+            .value: "seeded-\(Int(Date().timeIntervalSince1970))",
+            .domain: ".sezzle.com",
+            .path: "/",
+            .secure: "TRUE",
+            .expires: Date().addingTimeInterval(60 * 60 * 24 * 365), // 1 year
+        ]) else {
+            showDiagnostic(title: "Seed failed", message: "HTTPCookie construction returned nil.")
+            return
+        }
+        let store = WKWebsiteDataStore.default()
+        store.httpCookieStore.setCookie(cookie) { [weak self] in
+            // Spin up a throwaway WKWebView so WebKit's networking process initializes and
+            // the cookie is durably persisted before the user force-quits.
+            let config = WKWebViewConfiguration()
+            config.websiteDataStore = store
+            let wv = WKWebView(frame: .zero, configuration: config)
+            self?.seedFlushWebView = wv
+            wv.load(URLRequest(url: URL(string: "about:blank")!))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.seedFlushWebView = nil
+                self?.countSezzleData { cookieCount, recordCount in
+                    self?.showDiagnostic(
+                        title: "Seeded",
+                        message: "After seed:\n• cookie store: \(cookieCount)\n• data records: \(recordCount)\n\nNow force-quit from the app switcher, relaunch, then tap Read."
+                    )
+                }
+            }
+        }
+    }
+
+    @objc private func readSezzleCookies() {
+        countSezzleData { [weak self] cookieCount, recordCount in
+            self?.showDiagnostic(
+                title: "Sezzle data",
+                message: "• cookie store: \(cookieCount)\n• data records: \(recordCount)\n\nIf cookie store > 0 but data records = 0, fetchDataRecords missed them — this is the real-device divergence."
+            )
+        }
+    }
+
+    /// Reports the count of Sezzle entries via both WKHTTPCookieStore (the persistent jar)
+    /// and WKWebsiteDataStore.fetchDataRecords (what the SDK's clear path currently relies on).
+    /// Divergence between the two is the bug under investigation.
+    private func countSezzleData(completion: @escaping (_ cookieCount: Int, _ recordCount: Int) -> Void) {
+        let store = WKWebsiteDataStore.default()
+        let group = DispatchGroup()
+        var cookieCount = 0
+        var recordCount = 0
+
+        group.enter()
+        store.httpCookieStore.getAllCookies { cookies in
+            cookieCount = cookies.filter { $0.domain.lowercased().hasSuffix("sezzle.com") }.count
+            group.leave()
+        }
+
+        group.enter()
+        store.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
+            recordCount = records.filter { record in
+                let name = record.displayName.lowercased()
+                return name == "sezzle.com" || name.hasSuffix(".sezzle.com")
+            }.count
+            group.leave()
+        }
+
+        group.notify(queue: .main) {
+            completion(cookieCount, recordCount)
+        }
+    }
+
+    private func showDiagnostic(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 
     private func setupUI() {
