@@ -19,9 +19,10 @@ final class SezzleClearWebViewDataTests: XCTestCase {
             dispatchPrecondition(condition: .onQueue(.main))
             expectation.fulfill()
         }
-        // CI sometimes takes 5+ seconds for the first WKWebsiteDataStore.fetchDataRecords call
-        // on a freshly-booted simulator (cold-start init). Generous timeout.
-        wait(for: [expectation], timeout: 30.0)
+        // CI cold-start hits TWO serial WebKit init calls now (httpCookieStore.getAllCookies for
+        // the /v4/users/logout pre-step, then fetchDataRecords for the local scrub). Each can
+        // take 30+ seconds on a freshly-booted simulator. Single warm-runs are sub-second.
+        wait(for: [expectation], timeout: 90.0)
     }
 
     func testClearWebViewDataIsSafeWithoutCompletion() {
@@ -39,7 +40,8 @@ final class SezzleClearWebViewDataTests: XCTestCase {
                 expectation2.fulfill()
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 60.0)
+        // Two back-to-back clear() calls; the first warms WebKit, the second is fast.
+        wait(for: [expectation1, expectation2], timeout: 120.0)
     }
 
     /// `/v4/users/logout` is hit on `api.sezzle.com` in production and `sandbox.api.sezzle.com`
