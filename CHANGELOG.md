@@ -5,6 +5,18 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-06-03
+
+### Changed
+- **`clearWebViewData()` now forwards every `*.sezzle.com` cookie to `/v4/users/logout`**, not just `access_token` + `refresh_token`. The SDK takes no opinion about which cookies are auth-bearing — that's the backend's call. In practice this means cookies like `trk_id`, `__szl_email`, `szl_wpe_sid`, `_szlcpref`, `checkoutUuid`, etc. are now included in the logout request whenever they're present in the WebView's cookie jar.
+
+  Rationale: the 1.2.3 release forwarded only `access_token` + `refresh_token`, which was enough for the refresh-token revocation step but missed cookies that other server-side cleanup paths key on. Sending everything lets Sezzle's backend extend the logout's effect over time without requiring a new SDK release each time.
+
+### Compatibility
+- No public API changes. No new permissions. No new dependencies.
+- Behavior change is contained to the body of the `POST /v4/users/logout` request the SDK makes from `clearWebViewData()` — no impact on `startCheckout`, `SezzlePromotionalView`, or any other public surface.
+- No-op when no `*.sezzle.com` cookies are present (safe to call before any checkout has ever run).
+
 ## [1.2.3] - 2026-05-29
 
 ### Fixed

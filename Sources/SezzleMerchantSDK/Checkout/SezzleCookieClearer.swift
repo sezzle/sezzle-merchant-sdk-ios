@@ -25,13 +25,6 @@ enum SezzleCookieClearer {
         "sezzle.com",
     ]
 
-    /// Auth cookie names set by Sezzle's checkout backend (`/v4/users/logout` accepts these
-    /// as `Cookie` header). Other Sezzle cookies are deleted but not forwarded.
-    private static let authCookieNames: Set<String> = [
-        "access_token",
-        "refresh_token",
-    ]
-
     /// Short timeout so a slow or unreachable logout endpoint never blocks the merchant's
     /// logout flow. The server-side invalidation is best-effort; the local data wipe always runs.
     private static let logoutTimeout: TimeInterval = 5.0
@@ -43,24 +36,22 @@ enum SezzleCookieClearer {
         }
     }
 
-    /// Reads the WebView's `access_token` + `refresh_token` cookies and POSTs them to
-    /// `/v4/users/logout` so the backend invalidates the refresh token. Without this, even a
-    /// fully-empty WebView storage can have the next checkout's session pre-bound to the prior
-    /// user's account by Sezzle's backend device-recognition path. Errors are swallowed by design.
+    /// Reads all `*.sezzle.com` cookies from the WebView and POSTs them to `/v4/users/logout`.
+    /// The SDK does not pick a subset — the backend decides which cookies are meaningful for
+    /// the logout. Errors are swallowed by design.
     private static func invalidateServerSession(environment: SezzleEnvironment) async {
         let store = WKWebsiteDataStore.default()
         let cookies = await withCheckedContinuation { (cont: CheckedContinuation<[HTTPCookie], Never>) in
             store.httpCookieStore.getAllCookies { cont.resume(returning: $0) }
         }
 
-        let authCookies = cookies.filter { cookie in
+        let sezzleCookies = cookies.filter { cookie in
             let domain = cookie.domain.lowercased()
-            let isSezzleDomain = sezzleSuffixes.contains { domain == $0 || domain.hasSuffix(".\($0)") }
-            return isSezzleDomain && authCookieNames.contains(cookie.name)
+            return sezzleSuffixes.contains { domain == $0 || domain.hasSuffix(".\($0)") }
         }
-        guard !authCookies.isEmpty else { return }
+        guard !sezzleCookies.isEmpty else { return }
 
-        let cookieHeader = authCookies
+        let cookieHeader = sezzleCookies
             .map { "\($0.name)=\($0.value)" }
             .joined(separator: "; ")
 
