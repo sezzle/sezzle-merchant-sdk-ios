@@ -18,7 +18,7 @@ final class SezzleCheckoutWebViewController: UIViewController, WKNavigationDeleg
         cancelURL: URL,
         delegate: any SezzleCheckoutDelegate
     ) {
-        // isWebView=true is already appended by CheckoutHandler
+        // isWebView=true and isMerchantSDK=true are already appended by CheckoutHandler
         self.checkoutURL = checkoutURL
         self.completeURL = completeURL
         self.cancelURL = cancelURL

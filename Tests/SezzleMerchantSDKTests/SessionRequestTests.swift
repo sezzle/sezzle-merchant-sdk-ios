@@ -178,4 +178,49 @@ final class SessionRequestTests: XCTestCase {
         XCTAssertEqual(metadata["campaign"] as? String, "summer2026")
         XCTAssertEqual(metadata["_sdk_platform"] as? String, "ios")
     }
+
+    /// Checkout logs a `MissingUserAgentMode` event when `sezzle_user_agent_mode` is absent,
+    /// so the SDK always sends a mode. `redirect` is correct for both presentation modes —
+    /// completion is detected from the redirect to the complete/cancel URL.
+    func testEncoding_checkoutModeDefaultsToRedirect() throws {
+        let checkout = SezzleCheckout(
+            customer: SezzleCustomer(email: "jane@example.com"),
+            order: SezzleOrder(
+                referenceId: "ord-mode-default",
+                amount: SezzleAmount(amountInCents: 1000, currency: "USD")
+            )
+        )
+
+        let request = SessionRequest.from(checkout)
+        let data = try JSONEncoder().encode(request)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let order = json["order"] as! [String: Any]
+
+        XCTAssertEqual(order["checkout_mode"] as? String, "redirect")
+    }
+
+    func testEncoding_checkoutModeOverride() throws {
+        let checkout = SezzleCheckout(
+            customer: SezzleCustomer(email: "jane@example.com"),
+            order: SezzleOrder(
+                referenceId: "ord-mode-override",
+                amount: SezzleAmount(amountInCents: 1000, currency: "USD"),
+                userAgentMode: .iframe
+            )
+        )
+
+        let request = SessionRequest.from(checkout)
+        let data = try JSONEncoder().encode(request)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let order = json["order"] as! [String: Any]
+
+        XCTAssertEqual(order["checkout_mode"] as? String, "iframe")
+    }
+
+    /// Wire values must match checkout's `CheckoutModes` enum exactly.
+    func testUserAgentMode_rawValuesMatchCheckoutContract() {
+        XCTAssertEqual(SezzleUserAgentMode.redirect.rawValue, "redirect")
+        XCTAssertEqual(SezzleUserAgentMode.iframe.rawValue, "iframe")
+        XCTAssertEqual(SezzleUserAgentMode.popup.rawValue, "popup")
+    }
 }

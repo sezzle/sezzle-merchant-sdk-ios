@@ -81,6 +81,7 @@ struct SessionRequest: Encodable, Sendable {
         let requiresShippingInfo: Bool?
         let locale: String?
         let checkoutFinancingOptions: [String]?
+        let checkoutMode: String
 
         enum CodingKeys: String, CodingKey {
             case intent
@@ -94,6 +95,7 @@ struct SessionRequest: Encodable, Sendable {
             case requiresShippingInfo = "requires_shipping_info"
             case locale
             case checkoutFinancingOptions = "checkout_financing_options"
+            case checkoutMode = "checkout_mode"
         }
     }
 
@@ -175,7 +177,8 @@ extension SessionRequest {
                 metadata: mergedMetadata,
                 requiresShippingInfo: checkout.order.requiresShippingInfo,
                 locale: checkout.order.locale?.rawValue,
-                checkoutFinancingOptions: checkout.order.checkoutFinancingOptions?.map(\.rawValue)
+                checkoutFinancingOptions: checkout.order.checkoutFinancingOptions?.map(\.rawValue),
+                checkoutMode: checkout.order.userAgentMode.rawValue
             ),
             customer: CustomerPayload(
                 email: checkout.customer.email,

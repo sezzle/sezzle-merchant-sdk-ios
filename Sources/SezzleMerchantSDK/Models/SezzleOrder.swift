@@ -14,6 +14,7 @@ public struct SezzleOrder: Sendable {
     public let requiresShippingInfo: Bool?
     public let locale: SezzleLocale?
     public let checkoutFinancingOptions: [SezzleFinancingOption]?
+    public let userAgentMode: SezzleUserAgentMode
 
     public init(
         referenceId: String, description: String? = nil,
@@ -22,7 +23,8 @@ public struct SezzleOrder: Sendable {
         taxAmount: SezzleAmount? = nil, shippingAmount: SezzleAmount? = nil,
         metadata: [String: String]? = nil, requiresShippingInfo: Bool? = nil,
         locale: SezzleLocale? = nil,
-        checkoutFinancingOptions: [SezzleFinancingOption]? = nil
+        checkoutFinancingOptions: [SezzleFinancingOption]? = nil,
+        userAgentMode: SezzleUserAgentMode = .redirect
     ) {
         self.referenceId = referenceId; self.description = description
         self.amount = amount; self.intent = intent; self.items = items
@@ -30,5 +32,6 @@ public struct SezzleOrder: Sendable {
         self.shippingAmount = shippingAmount; self.metadata = metadata
         self.requiresShippingInfo = requiresShippingInfo; self.locale = locale
         self.checkoutFinancingOptions = checkoutFinancingOptions
+        self.userAgentMode = userAgentMode
     }
 }

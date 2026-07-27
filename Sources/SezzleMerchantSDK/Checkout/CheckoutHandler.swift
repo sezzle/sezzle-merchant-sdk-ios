@@ -68,7 +68,10 @@ final class CheckoutHandler: NSObject {
                     mode: checkoutMode
                 )
 
-                guard let finalURL = appendIsWebViewParam(to: response.order.checkoutURL) else {
+                guard let finalURL = Self.appendSDKParams(
+                    to: response.order.checkoutURL,
+                    theme: resolveTheme(from: viewController)
+                ) else {
                     delegate.checkoutDidFail(error: .invalidResponse)
                     return
                 }
@@ -102,7 +105,10 @@ final class CheckoutHandler: NSObject {
         self.checkoutMode = mode == .webView ? "webview" : "system_browser"
         // orderUUID stays nil — the merchant has it server-side, we don't.
 
-        let finalURL = appendIsWebViewParam(to: checkoutURL.absoluteString) ?? checkoutURL
+        let finalURL = Self.appendSDKParams(
+            to: checkoutURL.absoluteString,
+            theme: resolveTheme(from: viewController)
+        ) ?? checkoutURL
 
         presentCheckout(
             url: finalURL,
@@ -228,11 +234,39 @@ final class CheckoutHandler: NSObject {
         return idParam
     }
 
-    private func appendIsWebViewParam(to urlString: String) -> URL? {
+    /// `dark` or `light`, auto-detected from the presenting context's interface style.
+    /// `.unspecified` falls back to `light`. Checkout doesn't reliably pick up the host
+    /// app's appearance via `prefers-color-scheme` inside a WebView, so we pass it explicitly.
+    private func resolveTheme(from viewController: UIViewController) -> String {
+        viewController.traitCollection.userInterfaceStyle == .dark ? "dark" : "light"
+    }
+
+    /// Appends the SDK's checkout-URL params: `isWebView=true`, `isMerchantSDK=true`, and a
+    /// `theme` (`dark`/`light`).
+    ///
+    /// Both flags are sent, and they mean different things. `isWebView` tells checkout it is
+    /// embedded rather than standalone, which is what suppresses checkout's own navigation bar
+    /// (the SDK supplies its own close-button header, so two bars would stack) and keeps the
+    /// iOS bottom-padding compensation for embedded WebViews. `isMerchantSDK` narrows that to
+    /// *this* SDK rather than the Sezzle consumer app, which keeps the authentication back
+    /// button available and suppresses the third-party OAuth providers that can't complete
+    /// inside an embedded WebView.
+    ///
+    /// Checkout doesn't reliably pick up the host app's appearance via `prefers-color-scheme`
+    /// inside a WebView, so `theme` is passed explicitly. A `theme` already present on the URL
+    /// is respected (not overridden).
+    nonisolated static func appendSDKParams(to urlString: String, theme: String) -> URL? {
         guard var components = URLComponents(string: urlString) else { return nil }
         var queryItems = components.queryItems ?? []
         if !queryItems.contains(where: { $0.name == "isWebView" }) {
             queryItems.append(URLQueryItem(name: "isWebView", value: "true"))
+        }
+        if !queryItems.contains(where: { $0.name == "isMerchantSDK" }) {
+            queryItems.append(URLQueryItem(name: "isMerchantSDK", value: "true"))
+        }
+        // Respect a theme already present on the checkout URL; otherwise follow the app.
+        if !queryItems.contains(where: { $0.name == "theme" }) {
+            queryItems.append(URLQueryItem(name: "theme", value: theme))
         }
         components.queryItems = queryItems
         return components.url
