@@ -5,6 +5,30 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-27
+
+### Added
+- **`isMerchantSDK=true` on the checkout URL, sent alongside the existing `isWebView=true`.** The two flags mean different things and both are required. `isWebView` tells checkout it is embedded rather than standalone, which is what suppresses checkout's own navigation bar — this SDK draws its own close-button header, so without the flag two bars stack. `isMerchantSDK` then narrows that to *this* SDK rather than the Sezzle consumer app: checkout keeps the authentication back button available and suppresses the third-party OAuth sign-in providers, which do not complete reliably inside an embedded WebView.
+
+- **`theme` on the checkout URL, auto-detected from the host app's appearance.** Resolved from the presenting view controller's `traitCollection.userInterfaceStyle` and sent as `theme=dark` or `theme=light`. Checkout does not reliably observe the host app's appearance through `prefers-color-scheme` inside a WebView, so the SDK passes it explicitly. A `theme` already present on a merchant-supplied checkout URL is respected and never overridden.
+
+  The SDK always sends a concrete `dark` or `light`, never `system` — so checkout follows the *host app's* appearance rather than the device-level setting. For an app that pins itself to light mode on a device set to dark, checkout stays light and matches the surrounding app.
+
+  **Note:** checkout applies the dark palette only once its dark-theme rollout flag resolves for the shopper, and that flag is evaluated per user — so it does not resolve until the shopper has authenticated. In an SDK checkout the shopper logs in *on* the checkout page, so the pre-login screens (welcome, phone entry, verification) render light and the page switches to dark after login. The SDK sends the parameter correctly from the first request and checkout stores it, so no SDK change is needed; closing the pre-login gap is a checkout-side change.
+
+- **`SezzleUserAgentMode` on `SezzleOrder`, defaulting to `.redirect`.** Sent as `order.checkout_mode` on `POST /v2/session` and recorded on the checkout as `sezzle_user_agent_mode`. Checkout previously had no mode recorded for SDK-created sessions and emitted a diagnostic event for the omission; `.redirect` is the accurate description of how this SDK operates, since completion is detected from the redirect to your complete or cancel URL.
+
+  Override it via `SezzleOrder(..., userAgentMode:)` if you have a reason to. Note this only applies to sessions the SDK creates — on the server-driven `startCheckout(checkoutURL:)` path the session is created by your backend, so set `order.checkout_mode` there instead.
+
+### Compatibility
+- **Additive API change.** `SezzleOrder` gains one parameter with a default value, so existing initializer calls compile unchanged.
+- No new permissions and no new dependencies.
+- Merchants who construct their own checkout URL and pass it to `startCheckout(checkoutURL:)` will now see `isMerchantSDK` and `theme` appended to it, in addition to the `isWebView` this SDK already appended. Any `isWebView` or `theme` you set yourself is preserved.
+- No change to checkout's navigation bar, which `isWebView` continues to suppress.
+
+### Notes
+- A handful of checkout behaviours still key off `isWebView` alone and assume the Sezzle consumer app's React Native bridge — notably the consumer-lending disclosure hand-off for purchase-request and gift-card checkouts, which posts to a bridge a merchant app does not implement. Those paths need an `isMerchantSDK` exclusion on the checkout side; that work is tracked separately and is not addressed by this release.
+
 ## [1.2.4] - 2026-06-03
 
 ### Changed
