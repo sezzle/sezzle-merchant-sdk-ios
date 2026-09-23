@@ -17,33 +17,31 @@ final class CheckoutURLParamsTests: XCTestCase {
                 theme: "light"
             )
         )
-        XCTAssertEqual(queryItems(url)["isMerchantSDK"], "true")
+        XCTAssertEqual(queryItems(url)["isNativeSDK"], "true")
     }
 
-    /// `isWebView` is what suppresses checkout's own navigation bar. The SDK draws its own
-    /// close-button header, so dropping this flag stacks two bars. It must be sent alongside
-    /// `isMerchantSDK`, not replaced by it.
-    func testAppendsIsWebViewAlongsideIsMerchantSDK() throws {
+    /// `isNativeSDK` alone suppresses checkout's navigation bar, so `isWebView` is redundant
+    /// for chrome. Sending it is actively harmful: checkout reads it as the Sezzle consumer
+    /// app and routes TILA through a React Native postMessage no merchant app receives.
+    func testDoesNotAppendIsWebView() throws {
         let url = try XCTUnwrap(
             CheckoutHandler.appendSDKParams(
                 to: "https://checkout.sezzle.com/?id=abc",
                 theme: "light"
             )
         )
-        let items = queryItems(url)
-        XCTAssertEqual(items["isWebView"], "true")
-        XCTAssertEqual(items["isMerchantSDK"], "true")
+        XCTAssertNil(queryItems(url)["isWebView"])
     }
 
-    func testExistingIsWebViewIsNotDuplicated() throws {
+    func testExistingIsNativeSDKIsNotDuplicated() throws {
         let url = try XCTUnwrap(
             CheckoutHandler.appendSDKParams(
-                to: "https://checkout.sezzle.com/?id=abc&isWebView=true",
+                to: "https://checkout.sezzle.com/?id=abc&isNativeSDK=true",
                 theme: "light"
             )
         )
         let flags = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-            .queryItems?.filter { $0.name == "isWebView" } ?? []
+            .queryItems?.filter { $0.name == "isNativeSDK" } ?? []
         XCTAssertEqual(flags.count, 1)
     }
 
@@ -94,18 +92,6 @@ final class CheckoutURLParamsTests: XCTestCase {
         XCTAssertEqual(themes.first?.value, "dark")
     }
 
-    func testExistingIsMerchantSDKIsNotDuplicated() throws {
-        let url = try XCTUnwrap(
-            CheckoutHandler.appendSDKParams(
-                to: "https://checkout.sezzle.com/?id=abc&isMerchantSDK=true",
-                theme: "light"
-            )
-        )
-        let flags = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-            .queryItems?.filter { $0.name == "isMerchantSDK" } ?? []
-        XCTAssertEqual(flags.count, 1)
-    }
-
     func testURLWithNoExistingQueryString() throws {
         let url = try XCTUnwrap(
             CheckoutHandler.appendSDKParams(
@@ -114,8 +100,7 @@ final class CheckoutURLParamsTests: XCTestCase {
             )
         )
         let items = queryItems(url)
-        XCTAssertEqual(items["isWebView"], "true")
-        XCTAssertEqual(items["isMerchantSDK"], "true")
+        XCTAssertEqual(items["isNativeSDK"], "true")
         XCTAssertEqual(items["theme"], "dark")
     }
 

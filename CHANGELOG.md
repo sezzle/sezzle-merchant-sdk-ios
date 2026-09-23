@@ -5,10 +5,12 @@ All notable changes to the Sezzle Merchant SDK for iOS are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-07-27
+## [1.3.0] - 2026-09-23
 
 ### Added
-- **`isMerchantSDK=true` on the checkout URL, sent alongside the existing `isWebView=true`.** The two flags mean different things and both are required. `isWebView` tells checkout it is embedded rather than standalone, which is what suppresses checkout's own navigation bar — this SDK draws its own close-button header, so without the flag two bars stack. `isMerchantSDK` then narrows that to *this* SDK rather than the Sezzle consumer app: checkout keeps the authentication back button available and suppresses the third-party OAuth sign-in providers, which do not complete reliably inside an embedded WebView.
+- **`isNativeSDK=true` on the checkout URL, replacing the `isWebView=true` this SDK previously sent.** A single flag now covers everything the SDK needs: checkout suppresses its own navigation bar (this SDK draws its own close-button header, so two bars would otherwise stack), keeps the iOS bottom-padding compensation for embedded WebViews, keeps the authentication back button available, and suppresses the third-party OAuth sign-in providers that do not complete reliably inside an embedded WebView.
+
+  `isWebView` is no longer sent, and that is deliberate. Checkout reads that flag as "the Sezzle consumer app" and takes two code paths that assume its React Native bridge: it hands the consumer-lending disclosure off via a `postMessage` that a merchant app does not implement, and it turns return-to-store into a `postMessage` instead of a plain navigation to your return URL. Dropping the flag resolves both — the disclosure now opens normally and return-to-store navigates as expected.
 
 - **`theme` on the checkout URL, auto-detected from the host app's appearance.** Resolved from the presenting view controller's `traitCollection.userInterfaceStyle` and sent as `theme=dark` or `theme=light`. Checkout does not reliably observe the host app's appearance through `prefers-color-scheme` inside a WebView, so the SDK passes it explicitly. A `theme` already present on a merchant-supplied checkout URL is respected and never overridden.
 
@@ -23,11 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Compatibility
 - **Additive API change.** `SezzleOrder` gains one parameter with a default value, so existing initializer calls compile unchanged.
 - No new permissions and no new dependencies.
-- Merchants who construct their own checkout URL and pass it to `startCheckout(checkoutURL:)` will now see `isMerchantSDK` and `theme` appended to it, in addition to the `isWebView` this SDK already appended. Any `isWebView` or `theme` you set yourself is preserved.
-- No change to checkout's navigation bar, which `isWebView` continues to suppress.
+- Merchants who construct their own checkout URL and pass it to `startCheckout(checkoutURL:)` will now see `isNativeSDK` and `theme` appended to it, and will no longer see `isWebView`. Any `isWebView` or `theme` you set yourself is preserved.
+- No change to checkout's navigation bar, which `isNativeSDK` now suppresses in place of `isWebView`.
 
 ### Notes
-- A handful of checkout behaviours still key off `isWebView` alone and assume the Sezzle consumer app's React Native bridge — notably the consumer-lending disclosure hand-off for purchase-request and gift-card checkouts, which posts to a bridge a merchant app does not implement. Those paths need an `isMerchantSDK` exclusion on the checkout side; that work is tracked separately and is not addressed by this release.
+- The iOS SDK is unaffected by the Android `SezzleCheckoutWebViewActivity` teardown crash fixed in the Android 1.3.0 release. There is no equivalent path here: the checkout URL is a non-optional stored property set at initialization, `viewDidLoad` has no early return before the WebView is built, and the controller opts out of state restoration.
 
 ## [1.2.4] - 2026-06-03
 
