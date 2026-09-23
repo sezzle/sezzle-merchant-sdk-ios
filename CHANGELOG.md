@@ -22,8 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Override it via `SezzleOrder(..., userAgentMode:)` if you have a reason to. Note this only applies to sessions the SDK creates — on the server-driven `startCheckout(checkoutURL:)` path the session is created by your backend, so set `order.checkout_mode` there instead.
 
+### Changed
+- **Minimum deployment target raised from iOS 14 to iOS 15.** Xcode 27 removed support for deployment targets below 15.0 — it refuses to build them at all — so an SDK pinned at 14 can no longer be compiled by current tooling. Since Apple requires App Store submissions to be built with a current Xcode, any app integrating this SDK is already targeting iOS 15 or higher, and this should be a no-op in practice. No source changes were needed: the SDK used no iOS 14-only APIs.
+
 ### Compatibility
 - **Additive API change.** `SezzleOrder` gains one parameter with a default value, so existing initializer calls compile unchanged.
+- **iOS 15 is now the minimum.** If your app's deployment target is still iOS 14, it must move to 15 before adopting this version — though current Xcode will not let you target 14 regardless.
 - No new permissions and no new dependencies.
 - Merchants who construct their own checkout URL and pass it to `startCheckout(checkoutURL:)` will now see `isNativeSDK` and `theme` appended to it, and will no longer see `isWebView`. Any `isWebView` or `theme` you set yourself is preserved.
 - No change to checkout's navigation bar, which `isNativeSDK` now suppresses in place of `isWebView`.

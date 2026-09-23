@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.author           = { 'Sezzle' => 'dev@sezzle.com' }
   s.source           = { :git => 'https://github.com/sezzle/sezzle-merchant-sdk-ios.git', :tag => s.version.to_s }
 
-  s.ios.deployment_target = '14.0'
+  s.ios.deployment_target = '15.0'
   s.swift_version    = '6.2'
 
   s.source_files     = 'Sources/SezzleMerchantSDK/**/*.swift'
