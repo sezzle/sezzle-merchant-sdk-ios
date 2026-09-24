@@ -385,10 +385,17 @@ final class ProductViewController: UIViewController, SezzleCheckoutDelegate {
 
     /// System Browser mode demo: custom-scheme callback URLs.
     /// `ASWebAuthenticationSession` requires a custom scheme (won't accept http/https).
+    ///
+    /// Uses the SDK's own `sezzle-sdk` scheme rather than an app-specific one, because
+    /// `POST /v2/session` validates callback URLs against a server-side scheme allowlist
+    /// and rejects anything outside it with a 400. `sezzle-sdk` is on that list;
+    /// `sezzle-example` is not. A merchant shipping their own scheme has to get it
+    /// allowlisted by Sezzle first. `ASWebAuthenticationSession` derives its
+    /// `callbackURLScheme` from `completeURL`, so the redirect still routes back here.
     @objc private func startServerDrivenSystemBrowserDemo() {
         let orderRef = "merchant-demo-\(Int.random(in: 1000...9999))"
-        let completeURL = URL(string: "sezzle-example://checkout/done?orderRef=\(orderRef)")!
-        let cancelURL = URL(string: "sezzle-example://checkout/cancelled")!
+        let completeURL = URL(string: "sezzle-sdk://checkout/done?orderRef=\(orderRef)")!
+        let cancelURL = URL(string: "sezzle-sdk://checkout/cancelled")!
         runServerDrivenDemo(orderRef: orderRef, completeURL: completeURL, cancelURL: cancelURL, mode: .systemBrowser)
     }
 
